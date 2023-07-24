@@ -35,4 +35,4 @@ jobs:
         staticcheck .
       
     - name: Test
-      run: cd test && go test -v
+      run: go test -v
