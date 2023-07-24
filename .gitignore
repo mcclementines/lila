@@ -19,3 +19,4 @@ go.work
 
 # local files
 local.env
+.azure

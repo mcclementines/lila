@@ -12,7 +12,6 @@ import (
 
 	"github.com/gorilla/mux"
 	openai "github.com/sashabaranov/go-openai"
-	env "github.com/joho/godotenv"
 )
 
 type WordDef struct {
@@ -28,9 +27,7 @@ type Completion struct {
 }
 
 func main() {
-	env.Load("local.env")
-
-	ai := openai.NewClient(os.Getenv("AIKEY"))
+	ai := openai.NewClient(os.Getenv("OPENAI_KEY"))
 	dictionary := load_json("./static/gre_vocab_list.json")
 
 	r := mux.NewRouter()
