@@ -23,7 +23,7 @@ jobs:
       
     - name: Install Dependencies
       run: |
-        go get -u golang.org/x/lint/golint
+        go install honnef.co/go/tools/cmd/staticcheck@latest
         go get -v ./...
       
     - name: Build
@@ -32,7 +32,7 @@ jobs:
     - name: Vet & Lint
       run: |
         go vet .
-        golint .
+        staticcheck .
       
     - name: Test
       run: cd test && go test -v
