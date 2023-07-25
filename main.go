@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	openai "github.com/sashabaranov/go-openai"
@@ -29,6 +30,8 @@ type Completion struct {
 func main() {
 	ai := openai.NewClient(os.Getenv("OPENAI_KEY"))
 	dictionary := load_json("./static/gre_vocab_list.json")
+
+	rand.Seed(time.Now().UTC().UnixMicro())
 
 	r := mux.NewRouter()
 	api := r.PathPrefix("/api").Subrouter()

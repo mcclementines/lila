@@ -17,6 +17,5 @@
 # Go workspace file
 go.work
 
-# local files
-local.env
-.azure
+# executable
+lila
