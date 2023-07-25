@@ -1,6 +1,9 @@
 # syntax=docker/dockerfile:1
 
-FROM golang:1.19
+FROM mcr.microsoft.com/oss/go/microsoft/golang:1.19-bullseye
+
+ENV PORT 1337
+EXPOSE 1337
 
 WORKDIR /app
 
