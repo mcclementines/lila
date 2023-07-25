@@ -2,8 +2,8 @@
 
 FROM mcr.microsoft.com/oss/go/microsoft/golang:1.19-bullseye
 
-ENV PORT 1337
-EXPOSE 1337
+ENV PORT 8000
+EXPOSE 8000
 
 WORKDIR /app
 
