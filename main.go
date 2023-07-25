@@ -69,7 +69,7 @@ func main() {
 		fmt.Fprintf(w, "%s\n", response)
 	})
 
-	http.ListenAndServe(":1337", r)
+	http.ListenAndServe(":8000", r)
 }
 
 func load_json(file string) []WordDef {
