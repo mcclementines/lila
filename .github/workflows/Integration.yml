@@ -15,6 +15,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./api
 
     steps:
     - uses: actions/checkout@v3
@@ -26,12 +30,12 @@ jobs:
     
     - name: Install Dependencies
       run: |
-        cd api
         go install honnef.co/go/tools/cmd/staticcheck@latest
         go get -v ./...
       
     - name: Build
-      run: go build .
+      run: |
+        go build .
       
     - name: Vet & Lint
       run: |
@@ -39,4 +43,5 @@ jobs:
         staticcheck .
       
     - name: Test
-      run: go test -v
+      run: |
+        go test -v
