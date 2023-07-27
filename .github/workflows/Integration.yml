@@ -15,11 +15,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
     
+    defaults:
+      run:
+        working-directory: ./api
+
     steps:
     - uses: actions/checkout@v3
 
@@ -34,7 +34,8 @@ jobs:
         go get -v ./...
       
     - name: Build
-      run: go build .
+      run: |
+        go build .
       
     - name: Vet & Lint
       run: |
@@ -42,4 +43,5 @@ jobs:
         staticcheck .
       
     - name: Test
-      run: go test -v
+      run: |
+        go test -v
