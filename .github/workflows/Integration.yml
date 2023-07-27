@@ -26,6 +26,7 @@ jobs:
     
     - name: Install Dependencies
       run: |
+        cd api
         go install honnef.co/go/tools/cmd/staticcheck@latest
         go get -v ./...
       
