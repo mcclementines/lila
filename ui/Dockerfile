@@ -1,14 +1,17 @@
 # syntax=docker/dockerfile:1
 
-FROM node:bullseye
+FROM node:alpine AS builder
+
+ENV NODE_ENV production
+
 WORKDIR /app
+COPY package.json package-lock.json ./
+COPY public/ public/
+COPY src/ src/
+RUN npm ci
+RUN npm run build
 
-COPY package.json ./
-COPY package-lock.json ./
-RUN npm install
-RUN npm install react-scripts@5.0.1 -g
+FROM nginx:alpine
 
-COPY . ./
-ENV PATH /app/node_modules/.bin:$PATH
-
-CMD ["npm", "start"]
+COPY --from=builder /app/build /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
