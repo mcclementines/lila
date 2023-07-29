@@ -2,7 +2,8 @@
 
 FROM golang:1.19-alpine
 WORKDIR /api
-ADD go.mod go.sum ./
+COPY ./go.mod ./
+COPY ./go.sum ./
 RUN go mod download
 COPY ./*.go ./
 ADD ./static ./static
