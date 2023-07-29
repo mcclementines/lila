@@ -5,7 +5,7 @@ WORKDIR /api
 ADD go.mod go.sum ./
 RUN go mod download
 COPY ./*.go ./
-ADD static ./static
+ADD ./static ./static
 RUN CGO_ENABLED=0 GOOS=linux go build -o /lila
 
 ENV PORT 8000
