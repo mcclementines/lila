@@ -48,18 +48,17 @@ jobs:
   build-ui:
     runs-on: ubuntu-latest
 
-    # defaults:
-    #   run:
-    #     working-directory: ${{github.workspace}}/ui
+    defaults:
+      run:
+        working-directory: ${{github.workspace}}/ui
 
     permissions:
       contents: read
       packages: write
     
     steps:
-      - name: list directories
-        run: ls .
-
+      - uses: actions/checkout@v3
+      
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
