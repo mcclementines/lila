@@ -1,19 +1,15 @@
 # syntax=docker/dockerfile:1
 
-FROM mcr.microsoft.com/oss/go/microsoft/golang:1.19-bullseye
+FROM golang:1.19-alpine
+WORKDIR /api
+ADD go.mod go.sum ./
+RUN go mod download
+COPY ./*.go ./
+ADD static ./static
+RUN CGO_ENABLED=0 GOOS=linux go build -o /lila
 
 ENV PORT 8000
 EXPOSE 8000
-
-WORKDIR /api
-
-ADD api ./
-
-RUN go mod download
-
-COPY ./api/*.go ./
-
-RUN CGO_ENABLED=0 GOOS=linux go build -o /lila
 
 CMD ["/lila"]
 
