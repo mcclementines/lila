@@ -15,7 +15,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./api
+        working-directory: ${{github.workspace}}/api
 
     permissions:
       contents: read
@@ -48,31 +48,13 @@ jobs:
       
     - name: Test Api
       run: go test -v
-    
-    - name: Log in to Github container registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Lowercase repo name
-      run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
-    
-    - name: Build and push api container image to registry
-      uses: docker/build-push-action@v4
-      with:
-        context: .
-        push: true
-        tags: ghcr.io/${{ env.REPO }}:${{ github.sha }}
-        file: ${{github.workspace}}/api/Dockerfile
   
   build-ui:
     runs-on: ubuntu-latest
 
     defaults:
       run:
-        working-directory: ./ui
+        working-directory: ${{github.workspace}}/ui
 
     permissions:
       contents: read
@@ -80,7 +62,7 @@ jobs:
     
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
@@ -100,6 +82,8 @@ jobs:
     needs: [build-api, build-ui] 
 
     steps:
+      - uses: actions/checkout@v3
+
       - name: Log in to Github container registry
         uses: docker/login-action@v2
         with:
