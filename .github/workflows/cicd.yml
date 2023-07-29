@@ -2,6 +2,7 @@ name: CI/CD
 
 env:
   AZURE_WEBAPP_NAME: LilaReview
+  AZURE_WEBAPP_UI_NAME: LilaReviewUi
 
 on:
   push:
@@ -9,7 +10,7 @@ on:
     - main
 
 jobs:
-  build:
+  build-api:
     runs-on: ubuntu-latest
 
     defaults:
@@ -32,20 +33,20 @@ jobs:
     - name: Setup Docker Buildx
       uses: docker/setup-buildx-action@v2
       
-    - name: Install Dependencies
+    - name: Install Api Dependencies
       run: |
         go install honnef.co/go/tools/cmd/staticcheck@latest
         go get -v ./...
       
-    - name: Build
+    - name: Build Api
       run: go build .
       
-    - name: Vet & Lint
+    - name: Vet & Lint Api
       run: |
         go vet .
         staticcheck .
       
-    - name: Test
+    - name: Test Api
       run: go test -v
     
     - name: Log in to Github container registry
@@ -58,7 +59,7 @@ jobs:
     - name: Lowercase repo name
       run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
     
-    - name: Build and push container image to registry
+    - name: Build and push api container image to registry
       uses: docker/build-push-action@v4
       with:
         context: .
@@ -66,9 +67,68 @@ jobs:
         tags: ghcr.io/${{ env.REPO }}:${{ github.sha }}
         file: ${{github.workspace}}/api/Dockerfile
   
+  build-ui:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./ui
+
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.5.0
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build React App
+        run: npm run build --if-present
+    
+      - name: Test React App
+        run: npm test
+  
+  build-docker-images:
+    runs-on: ubuntu-latest 
+    needs: [build-api, build-ui] 
+
+    steps:
+      - name: Log in to Github container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Lowercase repo name
+        run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+  
+      - name: Build and push api container image to registry
+        uses: docker/build-push-action@v4
+        with:
+          context: ./api
+          push: true
+          tags: ghcr.io/${{ env.REPO }}:${{ github.sha }}
+          file: ${{github.workspace}}/api/Dockerfile
+      
+      - name: Build and push api container image to registry
+        uses: docker/build-push-action@v4
+        with:
+          context: ./ui
+          push: true
+          tags: ghcr.io/${{ env.REPO }}-ui:${{ github.sha }}
+          file: ${{github.workspace}}/ui/Dockerfile
+  
   deploy:
     runs-on: ubuntu-latest
-    needs: [build] 
+    needs: [build-docker-images]
     
     environment:
       name: 'production'
@@ -78,10 +138,18 @@ jobs:
       - name: Lowercase the repo name
         run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
+      - name: Deploy api to Azure Web App
+        id: deploy-api-to-webapp
         uses: azure/webapps-deploy@85270a1854658d167ab239bce43949edb336fa7c
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           images: 'ghcr.io/${{ env.REPO }}:${{ github.sha }}'
+
+      - name: Deploy ui to Azure Web App
+        id: deploy-ui-to-webapp
+        uses: azure/webapps-deploy@85270a1854658d167ab239bce43949edb336fa7c
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_UI_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_UI }}
+          images: 'ghcr.io/${{ env.REPO }}-ui:${{ github.sha }}'

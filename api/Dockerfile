@@ -2,9 +2,9 @@
 
 FROM golang:1.19-bullseye
 WORKDIR /api
-ADD api ./
+ADD . ./
 RUN go mod download
-COPY ./api/*.go ./
+COPY ./*.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -o /lila
 
 ENV PORT 8000
