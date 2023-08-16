@@ -16,8 +16,8 @@ import (
 )
 
 type WordDef struct {
-	Word string
-	Type string
+	Word       string
+	Type       string
 	Definition string
 }
 
@@ -28,6 +28,10 @@ type Completion struct {
 }
 
 func main() {
+	models := map[string]string{
+		"prototype-v1": "davinci:ft-personal-2022-09-24-21-16-53",
+	}
+
 	ai := openai.NewClient(os.Getenv("OPENAI_KEY"))
 	dictionary := load_json("./static/gre_vocab_list.json")
 
@@ -36,8 +40,9 @@ func main() {
 	r := mux.NewRouter()
 	api := r.PathPrefix("/api").Subrouter()
 	api_v1 := api.PathPrefix("/v1").Subrouter()
-	
+
 	api_v1.HandleFunc("/completion", func(w http.ResponseWriter, r *http.Request) {
+		model := models[r.URL.Query().Get("model")]
 		word := dictionary[rand.Intn(len(dictionary))]
 
 		// replace with middleware
@@ -46,7 +51,7 @@ func main() {
 		resp, err := ai.CreateCompletion(
 			context.Background(),
 			openai.CompletionRequest{
-				Model:       "davinci:ft-personal-2022-09-24-21-16-53",
+				Model:       model,
 				Prompt:      fmt.Sprintf("WORD: %s\n\n###\n\n", word),
 				Stop:        []string{"###"},
 				Temperature: .6,
@@ -88,10 +93,10 @@ func load_json(file string) []WordDef {
 	if err != nil {
 		log.Fatal("Error during Unmarshal(): ", err)
 	}
-	
+
 	return payload
 }
 
 func generate_completion(sentence string, word string) Completion {
-	return Completion{Sentence:  sentence, Word: word, Choices: []string{}}
+	return Completion{Sentence: sentence, Word: word, Choices: []string{}}
 }
