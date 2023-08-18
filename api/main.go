@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
-	openai "github.com/sashabaranov/go-openai"
 	"log"
-	"math/rand"
+	random "math/rand"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/gorilla/mux"
+	openai "github.com/sashabaranov/go-openai"
 )
 
 type WordDef struct {
@@ -34,7 +35,7 @@ func main() {
 	ai := openai.NewClient(os.Getenv("OPENAI_KEY"))
 	dictionary := load_json("./static/gre_vocab_list.json")
 
-	random := rand.New(rand.NewSource(time.Now().UTC().UnixMicro()))
+	rand := random.New(random.NewSource(time.Now().UTC().UnixMicro()))
 
 	r := mux.NewRouter()
 	api := r.PathPrefix("/api").Subrouter()
@@ -42,7 +43,7 @@ func main() {
 
 	api_v1.HandleFunc("/completion", func(w http.ResponseWriter, r *http.Request) {
 		model := models[r.URL.Query().Get("model")]
-		word := dictionary[random.Intn(len(dictionary))]
+		word := dictionary[rand.Intn(len(dictionary))]
 
 		// replace with middleware
 		fmt.Printf("word: %s\n", word)
@@ -65,7 +66,8 @@ func main() {
 
 		sentence := strings.Trim(resp.Choices[0].Text, " ")
 
-		completion := generate_completion(sentence, word.Word)
+		completion := generate_completion(sentence, word, 
+      generate_choices(rand, filter_dictionary_by_type(dictionary, word.Type), word, 4))
 		response, err := json.Marshal(completion)
 
 		if err != nil {
@@ -96,7 +98,34 @@ func load_json(file string) []WordDef {
 	return payload
 }
 
-func generate_completion(sentence string, word string) Completion {
-	return Completion{Sentence: sentence, Word: word, Choices: []string{}}
+func filter_dictionary_by_type(dictionary []WordDef, word_type string) []WordDef {
+	var filtered []WordDef
+
+	for _, word := range dictionary {
+		if word.Type == word_type {
+			filtered = append(filtered, word)
+		}
+	}
+
+	return filtered
 }
 
+func generate_completion(sentence string, word WordDef, choices []string) Completion {
+	return Completion{Sentence: sentence, Word: word.Word, Choices: choices}
+}
+
+func generate_choices(rand *random.Rand, dict []WordDef, word WordDef, length int) []string {
+	var choices []string
+
+	for len(choices) < length {
+		var choice string
+
+		for choice == "" || choice == word.Word {
+			choice = dict[rand.Intn(len(dict))].Word
+		}
+
+		choices = append(choices, choice)
+	}
+
+	return choices
+}
