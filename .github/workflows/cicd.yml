@@ -102,7 +102,7 @@ jobs:
           tags: ghcr.io/${{ env.REPO }}:${{ github.sha }}
           file: ${{github.workspace}}/api/Dockerfile
       
-      - name: Build and push api container image to registry
+      - name: Build and push ui container image to registry
         uses: docker/build-push-action@v4
         with:
           context: ./ui
