@@ -4,15 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
+	openai "github.com/sashabaranov/go-openai"
 	"log"
 	"math/rand"
 	"net/http"
 	"os"
 	"strings"
 	"time"
-
-	"github.com/gorilla/mux"
-	openai "github.com/sashabaranov/go-openai"
 )
 
 type WordDef struct {
@@ -35,7 +34,7 @@ func main() {
 	ai := openai.NewClient(os.Getenv("OPENAI_KEY"))
 	dictionary := load_json("./static/gre_vocab_list.json")
 
-	rand.Seed(time.Now().UTC().UnixMicro())
+	random := rand.New(rand.NewSource(time.Now().UTC().UnixMicro()))
 
 	r := mux.NewRouter()
 	api := r.PathPrefix("/api").Subrouter()
@@ -43,7 +42,7 @@ func main() {
 
 	api_v1.HandleFunc("/completion", func(w http.ResponseWriter, r *http.Request) {
 		model := models[r.URL.Query().Get("model")]
-		word := dictionary[rand.Intn(len(dictionary))]
+		word := dictionary[random.Intn(len(dictionary))]
 
 		// replace with middleware
 		fmt.Printf("word: %s\n", word)
@@ -100,3 +99,4 @@ func load_json(file string) []WordDef {
 func generate_completion(sentence string, word string) Completion {
 	return Completion{Sentence: sentence, Word: word, Choices: []string{}}
 }
+
