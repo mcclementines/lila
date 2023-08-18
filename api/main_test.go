@@ -5,7 +5,7 @@ import (
 )
 
 func TestGenerateCompletion(t *testing.T) {
-	actual := generate_completion("This is only a test.", "test")
+	actual := generate_completion("This is only a test.", WordDef{Word: "test"}, []string{})
 	expected := Completion{Sentence: "This is only a test.", Word: "test", Choices: []string{}}
 
 	if actual.Sentence != expected.Sentence || actual.Word != expected.Word {

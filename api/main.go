@@ -66,7 +66,10 @@ func main() {
 
 		sentence := strings.Trim(resp.Choices[0].Text, " ")
 
-		completion := generate_completion(sentence, word, generate_choices(rand, filter_dictionary_by_type(dictionary, word.Type), word, 4))
+    filtered_dictionary := filter_dictionary_by_type(dictionary, word.Type) 
+    choices := generate_choices(rand, filtered_dictionary, word, 4) 
+
+		completion := generate_completion(sentence, word, choices)
 		response, err := json.Marshal(completion)
 
 		if err != nil {
