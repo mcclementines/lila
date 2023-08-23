@@ -21,69 +21,67 @@ type WordDef struct {
 	Definition string
 }
 
-type Completion struct {
+type ModelOut_SentenceCompletion struct {
+  Sentence string
+  Word     string
+}
+
+type SentenceCompletion struct {
 	Sentence string
 	Word     string
 	Choices  []string
 }
 
 func main() {
-	models := map[string]string{
-		"prototype-v1": "davinci:ft-personal-2022-09-24-21-16-53",
-	}
-
-	ai := openai.NewClient(os.Getenv("OPENAI_KEY"))
-	dictionary := load_json("./static/gre_vocab_list.json")
-
-	rand := random.New(random.NewSource(time.Now().UTC().UnixMicro()))
-
 	r := mux.NewRouter()
 	api := r.PathPrefix("/api").Subrouter()
 	api_v1 := api.PathPrefix("/v1").Subrouter()
 
 	api_v1.HandleFunc("/completion", func(w http.ResponseWriter, r *http.Request) {
-		model := models[r.URL.Query().Get("model")]
-		word := dictionary[rand.Intn(len(dictionary))]
-
-		// replace with middleware
-		fmt.Printf("word: %s\n", word)
-
-		resp, err := ai.CreateCompletion(
-			context.Background(),
-			openai.CompletionRequest{
-				Model:       model,
-				Prompt:      fmt.Sprintf("WORD: %s\n\n###\n\n", word),
-				Stop:        []string{"###"},
-				Temperature: .6,
-				MaxTokens:   64,
-			},
-		)
+		model := get_model(r.URL.Query().Get("model"))
+    completion, err := generate_completion(model)
 
 		if err != nil {
-			fmt.Printf("ChatCompletionError: %s", err)
+			fmt.Printf("CompletionError: %s", err)
 			return
 		}
 
-		sentence := strings.Trim(resp.Choices[0].Text, " ")
-
-    filtered_dictionary := filter_dictionary_by_type(dictionary, word.Type) 
-    choices := generate_choices(rand, filtered_dictionary, word, 4) 
-
-		completion := generate_completion(sentence, word, choices)
-		response, err := json.Marshal(completion)
+		resp, err := json.Marshal(completion)
 
 		if err != nil {
 			fmt.Printf("MarshallError: %s", err)
 			return
 		}
 
-		fmt.Fprintf(w, "%s\n", response)
+		fmt.Fprintf(w, "%s\n", resp)
 	})
 
 	http.ListenAndServe(":8000", r)
 }
 
-func load_json(file string) []WordDef {
+func get_random() *random.Rand {
+	return random.New(random.NewSource(time.Now().UTC().UnixMicro()))
+}
+
+func get_openai() *openai.Client {
+	return openai.NewClient(os.Getenv("OPENAI_KEY"))
+}
+
+func get_model(model string) string {
+  switch model {
+  case "sentence-completion":
+    // Completion pair models (retired
+    // return "davinci:ft-personal-2022-09-24-21-16-53" // v1
+    // return "davinci:ft-personal-2023-08-22-05-09-16" // v2
+    
+    // Chat completion models
+    return "ft:gpt-3.5-turbo-0613:personal::7qZZMuwb" // v1
+  default:
+    return "ft:gpt-3.5-turbo-0613:personal::7qZZMuwb"
+  }
+}
+
+func get_dictionary(file string) []WordDef {
 	content, err := os.ReadFile(file)
 
 	if err != nil {
@@ -112,12 +110,62 @@ func filter_dictionary_by_type(dictionary []WordDef, word_type string) []WordDef
 	return filtered
 }
 
-func generate_completion(sentence string, word WordDef, choices []string) Completion {
-	return Completion{Sentence: sentence, Word: word.Word, Choices: choices}
+func unmarshal_modelout_sentencecompletion(result string) ModelOut_SentenceCompletion {
+  var payload ModelOut_SentenceCompletion
+  
+  log.Print("Respose from sentence completion model: " + result)
+
+  err := json.Unmarshal([]byte(result), &payload)
+
+  if err != nil {
+		log.Fatal("Error during Unmarshal(): ", err)
+  }
+
+  return payload
 }
 
-func generate_choices(rand *random.Rand, dict []WordDef, word WordDef, length int) []string {
+func generate_completion(model string) (SentenceCompletion, error) {
+  ai := get_openai()
+  dictionary := get_dictionary("./static/gre_vocab_list.json")
+  rand := get_random()
+
+	word := dictionary[rand.Intn(len(dictionary))] 
+
+  resp, err := ai.CreateChatCompletion(context.Background(),
+		openai.ChatCompletionRequest{
+			Model:       model,
+			Messages:    []openai.ChatCompletionMessage {
+        {
+          Role: openai.ChatMessageRoleSystem,
+          Content: "Respond in JSON",
+        },
+        {
+          Role: openai.ChatMessageRoleUser,
+          Content: fmt.Sprintf("WORD: %s\n\n###\n\n", word.Word),
+        },
+      },
+			Stop:        []string{"###"},
+			Temperature: .6,
+			MaxTokens:   128,
+		},
+	)
+
+	if err != nil {
+		return SentenceCompletion{}, err
+	}
+
+	mo_completion := unmarshal_modelout_sentencecompletion(strings.Trim(resp.Choices[0].Message.Content, " "))
+
+	filtered_dictionary := filter_dictionary_by_type(dictionary, word.Type)
+	choices := generate_choices(filtered_dictionary, word, 4)
+
+	return SentenceCompletion{Sentence: mo_completion.Sentence, Word: mo_completion.Word, Choices: choices}, nil
+}
+
+func generate_choices(dict []WordDef, word WordDef, length int) []string {
 	var choices []string
+
+  rand := get_random()
 
 	for len(choices) < length {
 		var choice string
@@ -131,3 +179,5 @@ func generate_choices(rand *random.Rand, dict []WordDef, word WordDef, length in
 
 	return choices
 }
+
+
