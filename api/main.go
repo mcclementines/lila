@@ -21,7 +21,12 @@ type WordDef struct {
 	Definition string
 }
 
-type Completion struct {
+type ModelOut_SentenceCompletion struct {
+  Sentence string
+  Word     string
+}
+
+type SentenceCompletion struct {
 	Sentence string
 	Word     string
 	Choices  []string
@@ -64,10 +69,15 @@ func get_openai() *openai.Client {
 
 func get_model(model string) string {
   switch model {
-  case "prototype-v1":
-    return "davinci:ft-personal-2022-09-24-21-16-53"
+  case "sentence-completion":
+    // Completion pair models (retired
+    // return "davinci:ft-personal-2022-09-24-21-16-53" // v1
+    // return "davinci:ft-personal-2023-08-22-05-09-16" // v2
+    
+    // Chat completion models
+    return "ft:gpt-3.5-turbo-0613:personal::7qZZMuwb" // v1
   default:
-    return "davinci:ft-personal-2022-09-24-21-16-53"
+    return "ft:gpt-3.5-turbo-0613:personal::7qZZMuwb"
   }
 }
 
@@ -100,33 +110,56 @@ func filter_dictionary_by_type(dictionary []WordDef, word_type string) []WordDef
 	return filtered
 }
 
-func generate_completion(model string) (Completion, error) {
+func unmarshal_modelout_sentencecompletion(result string) ModelOut_SentenceCompletion {
+  var payload ModelOut_SentenceCompletion
+  
+  log.Print("Respose from sentence completion model: " + result)
+
+  err := json.Unmarshal([]byte(result), &payload)
+
+  if err != nil {
+		log.Fatal("Error during Unmarshal(): ", err)
+  }
+
+  return payload
+}
+
+func generate_completion(model string) (SentenceCompletion, error) {
   ai := get_openai()
   dictionary := get_dictionary("./static/gre_vocab_list.json")
   rand := get_random()
 
 	word := dictionary[rand.Intn(len(dictionary))] 
 
-  resp, err := ai.CreateCompletion(context.Background(),
-		openai.CompletionRequest{
+  resp, err := ai.CreateChatCompletion(context.Background(),
+		openai.ChatCompletionRequest{
 			Model:       model,
-			Prompt:      fmt.Sprintf("WORD: %s\n\n###\n\n", word),
+			Messages:    []openai.ChatCompletionMessage {
+        {
+          Role: openai.ChatMessageRoleSystem,
+          Content: "Respond in JSON",
+        },
+        {
+          Role: openai.ChatMessageRoleUser,
+          Content: fmt.Sprintf("WORD: %s\n\n###\n\n", word.Word),
+        },
+      },
 			Stop:        []string{"###"},
 			Temperature: .6,
-			MaxTokens:   64,
+			MaxTokens:   128,
 		},
 	)
 
 	if err != nil {
-		return Completion{}, err
+		return SentenceCompletion{}, err
 	}
 
-	sentence := strings.Trim(resp.Choices[0].Text, " ")
+	mo_completion := unmarshal_modelout_sentencecompletion(strings.Trim(resp.Choices[0].Message.Content, " "))
 
 	filtered_dictionary := filter_dictionary_by_type(dictionary, word.Type)
 	choices := generate_choices(filtered_dictionary, word, 4)
 
-	return Completion{Sentence: sentence, Word: word.Word, Choices: choices}, nil
+	return SentenceCompletion{Sentence: mo_completion.Sentence, Word: mo_completion.Word, Choices: choices}, nil
 }
 
 func generate_choices(dict []WordDef, word WordDef, length int) []string {
@@ -145,4 +178,6 @@ func generate_choices(dict []WordDef, word WordDef, length int) []string {
 	}
 
 	return choices
-} 
+}
+
+
