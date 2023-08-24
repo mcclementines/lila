@@ -25,19 +25,18 @@ go.work
 lila
 
 ###
-# REACT PROJECT IGNORE
+# SVELTE  PROJECT IGNORE
 ###
 
-# dependencies
-/ui/node_modules
-/ui/.pnp
-.pnp.js
-
-# testing
-/ui/coverage
-
-# production
-/ui/build
+node_modules
+/build
+/.svelte-kit
+/package
+.env
+.env.*
+!.env.example
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
 
 # misc
 .env.local
