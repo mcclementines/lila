@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	openai "github.com/sashabaranov/go-openai"
 )
@@ -22,8 +23,8 @@ type WordDef struct {
 }
 
 type ModelOut_SentenceCompletion struct {
-  Sentence string
-  Word     string
+	Sentence string
+	Word     string
 }
 
 type SentenceCompletion struct {
@@ -33,13 +34,17 @@ type SentenceCompletion struct {
 }
 
 func main() {
-	r := mux.NewRouter()
-	api := r.PathPrefix("/api").Subrouter()
+  headersOk := handlers.AllowedHeaders([]string{"X-Requested-With"})  
+  originsOk := handlers.AllowedOrigins([]string{os.Getenv("ORIGIN_ALLOWED")})
+  methodsOk := handlers.AllowedMethods([]string{"GET", "POST"})
+
+	r := mux.NewRouter()	
+  api := r.PathPrefix("/api").Subrouter()
 	api_v1 := api.PathPrefix("/v1").Subrouter()
 
 	api_v1.HandleFunc("/completion", func(w http.ResponseWriter, r *http.Request) {
 		model := get_model(r.URL.Query().Get("model"))
-    completion, err := generate_completion(model)
+		completion, err := generate_completion(model)
 
 		if err != nil {
 			fmt.Printf("CompletionError: %s", err)
@@ -56,7 +61,7 @@ func main() {
 		fmt.Fprintf(w, "%s\n", resp)
 	})
 
-	http.ListenAndServe(":8000", r)
+	http.ListenAndServe(":8000", handlers.CORS(headersOk, originsOk, methodsOk)(r))
 }
 
 func get_random() *random.Rand {
@@ -68,17 +73,18 @@ func get_openai() *openai.Client {
 }
 
 func get_model(model string) string {
-  switch model {
-  case "sentence-completion":
-    // Completion pair models (retired
-    // return "davinci:ft-personal-2022-09-24-21-16-53" // v1
-    // return "davinci:ft-personal-2023-08-22-05-09-16" // v2
-    
-    // Chat completion models
-    return "ft:gpt-3.5-turbo-0613:personal::7qZZMuwb" // v1
-  default:
-    return "ft:gpt-3.5-turbo-0613:personal::7qZZMuwb"
-  }
+	switch model {
+	case "sentence-completion":
+		// Completion pair models (retired
+		// return "davinci:ft-personal-2022-09-24-21-16-53" // v1
+		// return "davinci:ft-personal-2023-08-22-05-09-16" // v2
+
+		// Chat completion models
+		// return "ft:gpt-3.5-turbo-0613:personal::7qZZMuwb" // v1
+    return "ft:gpt-3.5-turbo-0613:personal::7qy7H9zA"
+	default:
+		return model
+	}
 }
 
 func get_dictionary(file string) []WordDef {
@@ -98,86 +104,65 @@ func get_dictionary(file string) []WordDef {
 	return payload
 }
 
-func filter_dictionary_by_type(dictionary []WordDef, word_type string) []WordDef {
-	var filtered []WordDef
+//func filter_dictionary_by_type(dictionary []WordDef, word_type string) []WordDef {
+//	var filtered []WordDef
+//
+//	for _, word := range dictionary {
+//		if word.Type == word_type {
+//			filtered = append(filtered, word)
+//		}
+//	}
+//
+//	return filtered
+//}
 
-	for _, word := range dictionary {
-		if word.Type == word_type {
-			filtered = append(filtered, word)
-		}
+func unmarshal_sentencecompletion(result string) SentenceCompletion {
+	var payload SentenceCompletion
+  
+	log.Print("Response: " + result)
+
+	err := json.Unmarshal([]byte(result), &payload)
+
+	if err != nil {
+		log.Fatal("Error during Unmarshal(): ", err)
 	}
 
-	return filtered
-}
-
-func unmarshal_modelout_sentencecompletion(result string) ModelOut_SentenceCompletion {
-  var payload ModelOut_SentenceCompletion
-  
-  log.Print("Respose from sentence completion model: " + result)
-
-  err := json.Unmarshal([]byte(result), &payload)
-
-  if err != nil {
-		log.Fatal("Error during Unmarshal(): ", err)
-  }
-
-  return payload
+	return payload
 }
 
 func generate_completion(model string) (SentenceCompletion, error) {
-  ai := get_openai()
-  dictionary := get_dictionary("./static/gre_vocab_list.json")
-  rand := get_random()
+	ai := get_openai()
+	dictionary := get_dictionary("./static/gre_vocab_list.json")
+	rand := get_random()
 
-	word := dictionary[rand.Intn(len(dictionary))] 
+	word := dictionary[rand.Intn(len(dictionary))]
+  log.Print("Word: ", word)
 
-  resp, err := ai.CreateChatCompletion(context.Background(),
+	resp, err := ai.CreateChatCompletion(context.Background(),
 		openai.ChatCompletionRequest{
-			Model:       model,
-			Messages:    []openai.ChatCompletionMessage {
-        {
-          Role: openai.ChatMessageRoleSystem,
-          Content: "Respond in JSON",
-        },
-        {
-          Role: openai.ChatMessageRoleUser,
-          Content: fmt.Sprintf("WORD: %s\n\n###\n\n", word.Word),
-        },
-      },
+			Model: model,
+			Messages: []openai.ChatCompletionMessage{
+				{
+					Role:    openai.ChatMessageRoleSystem,
+					Content: "Respond in JSON",
+				},
+				{
+					Role:    openai.ChatMessageRoleUser,
+					Content: fmt.Sprintf("WORD: %s\n\n###\n\n", word.Word),
+				},
+			},
 			Stop:        []string{"###"},
-			Temperature: .6,
+			Temperature: .5,
 			MaxTokens:   128,
+      FrequencyPenalty: .4, 
 		},
 	)
 
 	if err != nil {
 		return SentenceCompletion{}, err
 	}
+  
+	completion := unmarshal_sentencecompletion(strings.Trim(resp.Choices[0].Message.Content, " "))
 
-	mo_completion := unmarshal_modelout_sentencecompletion(strings.Trim(resp.Choices[0].Message.Content, " "))
-
-	filtered_dictionary := filter_dictionary_by_type(dictionary, word.Type)
-	choices := generate_choices(filtered_dictionary, word, 4)
-
-	return SentenceCompletion{Sentence: mo_completion.Sentence, Word: mo_completion.Word, Choices: choices}, nil
+	return completion, nil
 }
-
-func generate_choices(dict []WordDef, word WordDef, length int) []string {
-	var choices []string
-
-  rand := get_random()
-
-	for len(choices) < length {
-		var choice string
-
-		for choice == "" || choice == word.Word {
-			choice = dict[rand.Intn(len(dict))].Word
-		}
-
-		choices = append(choices, choice)
-	}
-
-	return choices
-}
-
-
