@@ -9,7 +9,7 @@ COPY package.json package-lock.json ./
 COPY public/ public/
 COPY src/ src/
 RUN npm ci
-RUN npm run build
+RUN npm run build --production
 
 FROM nginx:alpine
 
