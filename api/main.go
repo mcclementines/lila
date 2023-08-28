@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	openai "github.com/sashabaranov/go-openai"
 )
@@ -33,8 +34,12 @@ type SentenceCompletion struct {
 }
 
 func main() {
-	r := mux.NewRouter()
-	api := r.PathPrefix("/api").Subrouter()
+  headersOk := handlers.AllowedHeaders([]string{"X-Requested-With"})  
+  originsOk := handlers.AllowedOrigins([]string{os.Getenv("ORIGIN_ALLOWED")})
+  methodsOk := handlers.AllowedMethods([]string{"GET", "POST"})
+
+	r := mux.NewRouter()	
+  api := r.PathPrefix("/api").Subrouter()
 	api_v1 := api.PathPrefix("/v1").Subrouter()
 
 	api_v1.HandleFunc("/completion", func(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +61,7 @@ func main() {
 		fmt.Fprintf(w, "%s\n", resp)
 	})
 
-	http.ListenAndServe(":8000", r)
+	http.ListenAndServe(":8000", handlers.CORS(headersOk, originsOk, methodsOk)(r))
 }
 
 func get_random() *random.Rand {
@@ -99,17 +104,17 @@ func get_dictionary(file string) []WordDef {
 	return payload
 }
 
-func filter_dictionary_by_type(dictionary []WordDef, word_type string) []WordDef {
-	var filtered []WordDef
-
-	for _, word := range dictionary {
-		if word.Type == word_type {
-			filtered = append(filtered, word)
-		}
-	}
-
-	return filtered
-}
+//func filter_dictionary_by_type(dictionary []WordDef, word_type string) []WordDef {
+//	var filtered []WordDef
+//
+//	for _, word := range dictionary {
+//		if word.Type == word_type {
+//			filtered = append(filtered, word)
+//		}
+//	}
+//
+//	return filtered
+//}
 
 func unmarshal_sentencecompletion(result string) SentenceCompletion {
 	var payload SentenceCompletion
@@ -147,8 +152,9 @@ func generate_completion(model string) (SentenceCompletion, error) {
 				},
 			},
 			Stop:        []string{"###"},
-			Temperature: .6,
+			Temperature: .5,
 			MaxTokens:   128,
+      FrequencyPenalty: .4, 
 		},
 	)
 
