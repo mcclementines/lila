@@ -2,16 +2,15 @@
 
 FROM node:alpine AS builder
 
-ENV NODE_ENV production
-
 WORKDIR /app
-COPY package.json package-lock.json ./
-COPY public/ public/
-COPY src/ src/
+COPY . /app
+
 RUN npm ci
-RUN npm run build --production
+RUN npm run build
 
-FROM nginx:alpine
-
-COPY --from=builder /app/build /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+FROM ubuntu
+RUN apt-get update
+RUN apt-get install nginx -y
+COPY --from=builder /app/dist /var/www/html/
+EXPOSE 80
+CMD ["nginx","-g","daemon off;"]
