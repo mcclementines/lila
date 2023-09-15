@@ -5,7 +5,7 @@ interface Props {
 }
 
 function ActionButton(props:Props) {
-  let className = "shadow-md h-14 flex text-center text-xl font-work-sans rounded-xl border-b-4";
+  let className = "shadow-md h-14 flex text-center text-l font-work-sans rounded-xl border-b-4";
 
   switch(props.color) {
     case "primary":
