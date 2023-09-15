@@ -1,7 +1,7 @@
 import "./index.css"
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { createBrowserRouter, Outlet, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import App from './App.tsx'
 import Home from './Home.tsx'
 import CreateAccount from './CreateAccount.tsx'
