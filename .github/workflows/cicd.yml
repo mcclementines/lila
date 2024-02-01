@@ -5,6 +5,8 @@ env:
   AZURE_WEBAPP_UI_NAME: LilaReviewUi
 
 on:
+  workflow_dispatch:
+    inputs:
   push:
     branches:
     - main
