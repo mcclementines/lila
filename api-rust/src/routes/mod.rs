@@ -1,7 +1,7 @@
 //! src/routes/mod.rs
 
-mod health_check;
 mod completion;
+mod health_check;
 
-pub use health_check::*;
 pub use completion::*;
+pub use health_check::*;

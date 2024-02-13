@@ -4,7 +4,7 @@ use std::net::TcpListener;
 
 use actix_web::{dev::Server, middleware::Logger, web, App, HttpServer};
 
-use crate::routes::{health_check, completion};
+use crate::routes::{completion, health_check};
 
 pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
     let server = HttpServer::new(|| {
