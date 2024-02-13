@@ -6,44 +6,40 @@ env:
 on:
   push:
     branches:
-    - develop-unused
-    - feature-unused/*
-    - bugfix-unused/*
+    - develop
+    - feature/*
+    - bugfix/*
 
 jobs:
   build-api:
     runs-on: ubuntu-latest
-    
+
     defaults:
       run:
-        working-directory: ${{github.workspace}}/api
+        working-directory: ${{github.workspace}}/api-rust
 
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Setup Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.19.0'
-        cache-dependency-path: ${{github.workspace}}/api/go.sum
+    permissions:
+      contents: read
+      packages: write
     
-    - name: Install Dependencies
-      run: |
-        go install honnef.co/go/tools/cmd/staticcheck@latest
-        go get -v ./...
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt,clippy
+      - uses: Swatinem/rust-cache@v2
       
-    - name: Build
-      run: |
-        go build .
+      - name: Run Tests
+        run: cargo test
       
-    - name: Vet & Lint
-      run: |
-        go vet .
-        staticcheck .
-      
-    - name: Test
-      run: |
-        go test -v
+      - name: Run fmt
+        run: cargo fmt --check
+
+      - name: Linting
+        run: cargo clippy -- -D warnings
+
+      - name: Build
+        run: cargo build
 
   build-ui:
     runs-on: ubuntu-latest
