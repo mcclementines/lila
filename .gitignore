@@ -69,4 +69,4 @@ dist-ssr
 *.sln
 *.sw?
 
-/api_rust/target
+/api-rust/target
