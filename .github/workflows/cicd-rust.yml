@@ -9,7 +9,7 @@ on:
     inputs:
   push:
     branches:
-    - main-unused
+    - main
 
 jobs:
   build-api:
@@ -17,39 +17,30 @@ jobs:
 
     defaults:
       run:
-        working-directory: ${{github.workspace}}/api
+        working-directory: ${{github.workspace}}/api-rust
 
     permissions:
       contents: read
       packages: write
     
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt,clippy
+      - uses: Swatinem/rust-cache@v2
+      
+      - name: Run Tests
+        run: cargo test
+      
+      - name: Run fmt
+        run: cargo fmt --check
 
-    - name: Setup Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.19.0'
-        cache-dependency-path: ${{github.workspace}}/api/go.sum
-    
-    - name: Setup Docker Buildx
-      uses: docker/setup-buildx-action@v2
-      
-    - name: Install Api Dependencies
-      run: |
-        go install honnef.co/go/tools/cmd/staticcheck@latest
-        go get -v ./...
-      
-    - name: Build Api
-      run: go build .
-      
-    - name: Vet & Lint Api
-      run: |
-        go vet .
-        staticcheck .
-      
-    - name: Test Api
-      run: go test -v
+      - name: Linting
+        run: cargo clippy -- -D warnings
+
+      - name: Build
+        run: cargo build
   
   build-ui:
     runs-on: ubuntu-latest
@@ -96,10 +87,10 @@ jobs:
       - name: Build and push api container image to registry
         uses: docker/build-push-action@v4
         with:
-          context: ./api
+          context: ./api-rust
           push: true
           tags: ghcr.io/${{ env.REPO }}:${{ github.sha }}
-          file: ${{github.workspace}}/api/Dockerfile
+          file: ${{github.workspace}}/api-rust/Dockerfile
       
       - name: Build and push ui container image to registry
         uses: docker/build-push-action@v4
