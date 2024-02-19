@@ -30,7 +30,7 @@ function useCompletionAPI(): UseCompletionAPIReturn {
   useEffect(() => {
     if (next === true) {
       (async () => {
-        axios.get<Completion>("http://localhost:8000/completion")
+        axios.get<Completion>(import.meta.env.VITE_REACT_APP_API_URL + "/completion")
           .then(response => setData(response.data))
           .catch(error => {
             console.error(error.message);
