@@ -1,6 +1,12 @@
 use std::net::TcpListener;
 
-use api_rust::{configuration::get_configuration, startup::run};
+use actix_cors::Cors;
+use actix_web::http;
+use api_rust::{
+    configuration::{get_configuration, ConfigureCors},
+    startup::run,
+};
+use tokio::sync::Mutex;
 use tracing::subscriber::set_global_default;
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_log::LogTracer;
@@ -28,5 +34,11 @@ async fn main() -> Result<(), std::io::Error> {
 
     let listener = TcpListener::bind(address).expect("Could not bind to port!");
 
-    run(listener)?.await
+    let cors = ConfigureCors {
+        allowed_origin: configuration.application.allowed_origin.clone(),
+        allowed_methods: vec!["GET".into(), "POST".into()],
+        allowed_headers: vec!["X-Requested-With".into()],
+    };
+
+    run(listener, cors)?.await
 }

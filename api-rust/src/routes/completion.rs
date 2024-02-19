@@ -15,7 +15,7 @@ pub async fn completion(dictionary: Data<Vec<WordDef>>) -> impl Responder {
         .unwrap()
         .word
         .to_owned();
-    
+
     get_completion(word).await.unwrap()
 }
 
