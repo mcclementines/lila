@@ -21,3 +21,6 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
 # For OpenAI connection
 openai_api_rust = "0.1.8"
+
+# General
+rand = "0.8.5"
