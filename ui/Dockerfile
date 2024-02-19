@@ -3,7 +3,7 @@
 FROM node:alpine AS builder
 
 WORKDIR /app
-COPY . /app
+COPY . .
 
 RUN npm ci
 RUN npm run build
