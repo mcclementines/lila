@@ -266,6 +266,7 @@ dependencies = [
  "actix-web",
  "config",
  "openai_api_rust",
+ "rand 0.8.5",
  "serde",
  "serde_json",
  "tokio",

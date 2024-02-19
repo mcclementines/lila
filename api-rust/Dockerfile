@@ -13,6 +13,7 @@ RUN apt-get update -y \
   && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/target/release/api-rust api-rust
 COPY configuration configuration
+COPY static static
 ENV APP_ENVIRONMENT production
 
 ENV PORT 8000
