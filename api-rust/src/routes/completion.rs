@@ -1,21 +1,25 @@
 //! src/routes/completion.rs
 
-use std::{fs::File, io::BufReader};
-
-use actix_web::{body::BoxBody, http::header::ContentType, HttpResponse, Responder};
+use actix_web::{body::BoxBody, http::header::ContentType, web::Data, HttpResponse, Responder};
 use openai_api_rust::{
     chat::{ChatApi, ChatBody},
     Auth, Message, OpenAI, Role,
 };
 use rand::seq::SliceRandom;
 
-pub async fn completion() -> impl Responder {
-    get_completion().await.unwrap()
+use crate::dictionary::WordDef;
+
+pub async fn completion(dictionary: Data<Vec<WordDef>>) -> impl Responder {
+    let word = dictionary
+        .choose(&mut rand::thread_rng())
+        .unwrap()
+        .word
+        .to_owned();
+
+    get_completion(word).await.unwrap()
 }
 
-pub async fn get_completion() -> Result<SentenceCompletion, std::io::Error> {
-    let dictionary = load_dictionary();
-
+pub async fn get_completion(word: String) -> Result<SentenceCompletion, std::io::Error> {
     let auth = Auth::from_env().expect("Could not load OpenAI key");
     let openai = OpenAI::new(auth, "https://api.openai.com/v1/");
     let body = ChatBody {
@@ -37,15 +41,7 @@ pub async fn get_completion() -> Result<SentenceCompletion, std::io::Error> {
             },
             Message {
                 role: Role::User,
-                content: format!(
-                    "WORD: {}\n\n###\n\n",
-                    dictionary
-                        .await
-                        .unwrap()
-                        .choose(&mut rand::thread_rng())
-                        .unwrap()
-                        .word
-                ),
+                content: format!("WORD: {}\n\n###\n\n", word),
             },
         ],
     };
@@ -54,23 +50,6 @@ pub async fn get_completion() -> Result<SentenceCompletion, std::io::Error> {
     let content = &choice[0].message.as_ref().unwrap().content.trim();
 
     Ok(serde_json::from_str(content).unwrap())
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct WordDef {
-    word: String,
-    pos: String,
-    definition: String,
-}
-
-pub async fn load_dictionary() -> Result<Vec<WordDef>, std::io::Error> {
-    let file = File::open("./static/gre_vocab_list.json")?;
-    let reader = BufReader::new(file);
-
-    let dictionary: Vec<WordDef> =
-        serde_json::from_reader(reader).expect("Could not load dictionary");
-
-    Ok(dictionary)
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
