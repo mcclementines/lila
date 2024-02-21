@@ -280,6 +280,7 @@ version = "0.1.0"
 dependencies = [
  "actix-cors",
  "actix-web",
+ "base64 0.21.7",
  "config",
  "openai_api_rust",
  "rand 0.8.5",

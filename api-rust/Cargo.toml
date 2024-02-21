@@ -25,3 +25,4 @@ openai_api_rust = "0.1.8"
 
 # General
 rand = "0.8.5"
+base64 = "0.21.7"

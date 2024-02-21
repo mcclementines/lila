@@ -1,6 +1,7 @@
 //! src/routes/completion.rs
 
 use actix_web::{body::BoxBody, http::header::ContentType, web::Data, HttpResponse, Responder};
+use base64::Engine;
 use openai_api_rust::{
     chat::{ChatApi, ChatBody},
     Auth, Message, OpenAI, Role,
@@ -16,7 +17,12 @@ pub async fn completion(dictionary: Data<Vec<WordDef>>) -> impl Responder {
         .word
         .to_owned();
 
-    get_completion(word).await.unwrap()
+    let mut response = get_completion(word).await.unwrap();
+
+    response.choices.push(response.word.clone());
+    response.choices.shuffle(&mut rand::thread_rng());
+
+    response
 }
 
 pub async fn get_completion(word: String) -> Result<SentenceCompletion, std::io::Error> {
@@ -48,6 +54,9 @@ pub async fn get_completion(word: String) -> Result<SentenceCompletion, std::io:
     let rs = openai.chat_completion_create(&body);
     let choice = rs.unwrap().choices;
     let content = &choice[0].message.as_ref().unwrap().content.trim();
+
+    let encoded_completion = base64::engine::general_purpose::URL_SAFE.encode(content);
+    tracing::info!("{}", encoded_completion);
 
     Ok(serde_json::from_str(content).unwrap())
 }
