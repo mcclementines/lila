@@ -14,6 +14,9 @@ function ActionButton(props:Props) {
     case "secondary":
       className += " border-t-2 border-x-2 bg-white border-gray-300 text-blue-400";
       break;
+    case "gray":
+      className += " border-t-2 border-x-2 bg-gray-100 border-gray-200 text-gray-300 pointer-events-none";
+      break;
     default:
       className += " bg-indigo-600 border-indigo-700 text-white";
       break;

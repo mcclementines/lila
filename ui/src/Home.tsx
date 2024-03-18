@@ -7,7 +7,7 @@ function Home() {
         <div className="flex h-[calc(var(--vh,1vh)_*_50)]">
           <div className='flex mx-auto mt-auto bg-indigo-600 rounded-3xl drop-shadow-xl border-b-8 border-indigo-700 p-12'>
             <h1 className="text-center m-auto text-3xl text-white font-work-sans">
-              Test prep books are so <span className='underline whitespace-pre'>          </span> boring, I just want to practice!
+              Test prep books are so <span className='underline whitespace-pre'>            </span> boring, I just want to practice!
             </h1>
           </div>
         </div>
@@ -19,8 +19,8 @@ function Home() {
           </div>
           <div className="flex-none w-full mb-4">
             <div className="flex flex-col justify-center space-y-2">
-              <ActionButton color="primary" link="/createAccount" text="LET'S GET STARTED"/>
-              <ActionButton color="secondary" link="/login" text="I ALREADY HAVE AN ACCOUNT"/>
+              <ActionButton color="primary" link="/gre" text="TRY IT OUT"/>
+              <ActionButton color="secondary" link="/about" text="LEARN MORE"/>
             </div>
           </div>
         </div>
