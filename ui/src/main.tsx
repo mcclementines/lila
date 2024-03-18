@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import App from './App.tsx'
 import Home from './Home.tsx'
+import About from "./About.tsx"
 import CreateAccount from './CreateAccount.tsx'
 import Login from './Login.tsx'
 import SentenceCompletion from "./GRE/SentenceCompletion.tsx"
@@ -18,6 +19,10 @@ const root = createBrowserRouter ([
       {
         path: "/",
         element: <Home />
+      },
+      {
+        path: "/about",
+        element: <About />
       },
       {
         path: "/createAccount",
