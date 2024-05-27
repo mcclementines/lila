@@ -32,7 +32,7 @@ function useCompletionAPI(): UseCompletionAPIReturn {
       (async () => {
         axios.get<Completion>(import.meta.env.VITE_REACT_APP_API_URL + "/completion")
           .then(response => {
-            setData(response.data)
+            setData(response.data);
           })
           .catch(error => {
             console.error(error.message);
