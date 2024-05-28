@@ -8,9 +8,13 @@ function SentenceCompletion() {
 
   if (error) {
     return (
-      <div>
-        <p className="text-2xl">Something is wrong! Please try again later.</p>
-      </div>
+      <>
+        <div className="w-full h-[calc(calc(var(--vh,1vh)*100)-4rem)] flex justify-center items-center">
+          <div className="max-w-lg w-full px-4 md:px-8 mx-auto flex flex-col" style={{ height: '80vh' }}>
+            <p className="sr-only text-center text-xl md:text-3xl font-work-sans">Something is wrong! Please try again later.</p>
+          </div>
+        </div>
+      </>
     )
   } else if (!isLoaded) {
     return (
@@ -31,17 +35,26 @@ function SentenceCompletion() {
     return (
       <>
         <div className="w-full h-[calc(calc(var(--vh,1vh)*100)-4rem)] flex justify-center items-center">
-          <div className="max-w-lg w-full px-4 md:px-8 mx-auto flex flex-col" style={{ height: '80vh' }}>
-            <div className='bg-indigo-600 rounded-3xl drop-shadow-xl border-b-8 border-indigo-700 p-4 md:p-8 mb-4'>
+          <div className="max-w-lg max-h-fit w-full h-full px-4 md:px-8 mx-auto flex flex-col">
+            <div className='bg-indigo-600 rounded-3xl drop-shadow-xl border-b-8 border-indigo-700 p-4 md:p-8 my-auto'>
               <h1 className="text-center text-xl md:text-3xl text-white font-work-sans">
-                {data ? (reactStringReplace(data.Sentence, /@+/g, (match) => (
-                  <>
+                {data ? (reactStringReplace(data.Sentence, /@+/g, (match,i) => (
+                  <span key={i}>
                     <span className='underline whitespace-pre'>
-                      {" ".repeat(data.Word.length+4)}
+                      {" ".repeat(14)}
                     </span>
                     {match.length > 0 && match[0].match(/^[a-z0-9]+$/i) ? " " : ""}{match}
-                  </>
-                ))) : (<p>No Data Available</p>)}
+                  </span>
+                ))) : 
+                  (
+
+                    <div className="w-full h-[calc(calc(var(--vh,1vh)*100)-4rem)] flex justify-center items-center">
+                      <div className="max-w-lg w-full px-4 md:px-8 mx-auto flex flex-col" style={{ height: '80vh' }}>
+                        <p className="sr-only text-center text-xl md:text-3xl font-work-sans">Something is wrong! Please try again later.</p>
+                      </div>
+                    </div>
+                  )
+                }
               </h1>
             </div>
             <div className="mt-auto mb-auto space-y-2">
