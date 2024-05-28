@@ -35,7 +35,7 @@ function SentenceCompletion() {
     return (
       <>
         <div className="w-full h-[calc(calc(var(--vh,1vh)*100)-4rem)] flex justify-center items-center">
-          <div className="max-w-lg max-h-fit w-full h-full px-4 md:px-8 mx-auto flex flex-col">
+          <div className="max-w-lg w-full h-full px-4 md:px-8 mx-auto flex flex-col">
             <div className='bg-indigo-600 rounded-3xl drop-shadow-xl border-b-8 border-indigo-700 p-4 md:p-8 my-auto'>
               <h1 className="text-center text-xl md:text-3xl text-white font-work-sans">
                 {data ? (reactStringReplace(data.Sentence, /@+/g, (match,i) => (
