@@ -1,10 +1,52 @@
 import reactStringReplace from 'react-string-replace';
 import ActionButton from "../ActionButton";
 import useCompletionAPI from "./completionAPI";
+import { useEffect, useState } from 'react';
+
+interface Selected {
+  key: number;
+  isCorrect: boolean | null;
+}
 
 function SentenceCompletion() {
-  const [error, isLoaded, data, _] = useCompletionAPI();
+  const [error, isLoaded, data, getNext] = useCompletionAPI();
+  const [selected, setSelected] = useState<Selected>({key: -1, isCorrect: null});
+  
+  useEffect(() => {
+    if (selected.key != -1) {
+      const reload = setTimeout(() => {
+        setSelected({key: -1, isCorrect: null});
+        getNext();
+      }, 2500);
 
+      return () => clearTimeout(reload);
+    }
+  }, [selected])
+
+  function handleClick(key: number) {
+    let isCorrect = false;
+
+    if (data?.Choices[key] === data?.Word) {
+      isCorrect = true;
+    }
+
+    setSelected({key: key, isCorrect: isCorrect});
+  }
+
+  function processColor(key: number) : string {
+    if (selected.key != -1 && selected.key === key) {
+      if (selected.isCorrect) {
+        return "green";
+      } else {
+        return "red";
+      }
+    } else if (selected.key != -1) {
+      if (data?.Choices[key] == data?.Word) return "green";
+      return "gray";
+    }
+
+    return "secondary";
+  }
 
   if (error) {
     return (
@@ -47,7 +89,6 @@ function SentenceCompletion() {
                   </span>
                 ))) : 
                   (
-
                     <div className="w-full h-[calc(calc(var(--vh,1vh)*100)-4rem)] flex justify-center items-center">
                       <div className="max-w-lg w-full px-4 md:px-8 mx-auto flex flex-col" style={{ height: '80vh' }}>
                         <p className="sr-only text-center text-xl md:text-3xl font-work-sans">Something is wrong! Please try again later.</p>
@@ -59,7 +100,7 @@ function SentenceCompletion() {
             </div>
             <div className="mt-auto mb-auto space-y-2">
               {data ? (data.Choices.map((choice, index) => (
-                <ActionButton color="secondary" link="/login" text={choice} key={index} />
+                <ActionButton color={processColor(index)} link="#" text={choice} key={index} onClick={() => handleClick(index)}/>
               ))) : (<div></div>)}
             </div>
           </div>

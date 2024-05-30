@@ -2,9 +2,12 @@ interface Props {
   link: string;
   text: string;
   color: string;
+  onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }
 
 function ActionButton(props:Props) {
+  let onClick = props.onClick != undefined ? props.onClick : () => {};
+
   let className = "shadow-md h-14 flex text-center text-l font-work-sans rounded-xl border-b-4";
 
   switch(props.color) {
@@ -17,13 +20,19 @@ function ActionButton(props:Props) {
     case "gray":
       className += " border-t-2 border-x-2 bg-gray-100 border-gray-200 text-gray-300 pointer-events-none";
       break;
+    case "green":
+      className += " border-t-2 border-x-2 bg-green-600 border-green-700 text-white pointer-events-none";
+      break;
+    case "red":
+      className += " border-t-2 border-x-2 bg-red-600 border-red-700 text-white pointer-events-none";
+      break;
     default:
       className += " bg-indigo-600 border-indigo-700 text-white";
       break;
   }
    
   return (
-    <a className={className} href={props.link}>
+    <a className={className} href={props.link} onClick={onClick}>
       <span className="align-middle m-auto">{props.text}</span>
     </a>
   )
