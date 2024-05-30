@@ -19,8 +19,8 @@ function Home() {
           </div>
           <div className="flex-none w-full mb-4">
             <div className="flex flex-col justify-center space-y-2">
-              <ActionButton color="primary" link="/gre" text="TRY IT OUT" onClick={null} />
-              <ActionButton color="secondary" link="/about" text="LEARN MORE" onClick={null} />
+              <ActionButton color="primary" link="/gre" text="TRY IT OUT" />
+              <ActionButton color="secondary" link="/about" text="LEARN MORE" />
             </div>
           </div>
         </div>
