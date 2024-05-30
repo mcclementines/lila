@@ -3,6 +3,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import App from './App.tsx'
+import AppView from './AppView.tsx'
 import Home from './Home.tsx'
 import About from "./About.tsx"
 import CreateAccount from './CreateAccount.tsx'
@@ -36,6 +37,12 @@ const root = createBrowserRouter ([
         path: "/gre",
         element: <GREHome />
       },
+    ]
+  },
+  {
+    path: "/",
+    element: <AppView />,
+    children: [
       {
         path: "/gre/completion",
         element: <SentenceCompletion />,

@@ -17,7 +17,7 @@ function SentenceCompletion() {
       const reload = setTimeout(() => {
         setSelected({key: -1, isCorrect: null});
         getNext();
-      }, 2500);
+      }, 1500);
 
       return () => clearTimeout(reload);
     }

@@ -21,10 +21,10 @@ function ActionButton(props:Props) {
       className += " border-t-2 border-x-2 bg-gray-100 border-gray-200 text-gray-300 pointer-events-none";
       break;
     case "green":
-      className += " border-t-2 border-x-2 bg-green-600 border-green-700 text-white pointer-events-none";
+      className += " bg-green-600 border-green-700 text-white pointer-events-none";
       break;
     case "red":
-      className += " border-t-2 border-x-2 bg-red-600 border-red-700 text-white pointer-events-none";
+      className += " bg-red-600 border-red-700 text-white pointer-events-none";
       break;
     default:
       className += " bg-indigo-600 border-indigo-700 text-white";
