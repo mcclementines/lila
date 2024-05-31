@@ -1,5 +1,5 @@
 interface Props {
-  link: string;
+  link?: string;
   text: string;
   color: string;
   onClick?: React.MouseEventHandler<HTMLAnchorElement>;

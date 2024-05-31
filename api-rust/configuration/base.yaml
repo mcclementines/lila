@@ -2,3 +2,7 @@
 
 application:
   port: 8000
+
+database:
+  host: "lila.6hjxfyt.mongodb.net/?retryWrites=true&w=majority&appName=lila"
+

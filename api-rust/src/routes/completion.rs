@@ -2,6 +2,7 @@
 
 use actix_web::{body::BoxBody, http::header::ContentType, web::Data, HttpResponse, Responder};
 use base64::Engine;
+use mongodb::{results::InsertOneResult, Client};
 use openai_api_rust::{
     chat::{ChatApi, ChatBody},
     Auth, Message, OpenAI, Role,
@@ -10,7 +11,10 @@ use rand::seq::SliceRandom;
 
 use crate::dictionary::WordDef;
 
-pub async fn completion(dictionary: Data<Vec<WordDef>>) -> impl Responder {
+pub async fn completion(
+    mongodb_client: Data<Client>,
+    dictionary: Data<Vec<WordDef>>,
+) -> impl Responder {
     let word = dictionary
         .choose(&mut rand::thread_rng())
         .unwrap()
@@ -21,6 +25,12 @@ pub async fn completion(dictionary: Data<Vec<WordDef>>) -> impl Responder {
 
     response.choices.push(response.word.clone());
     response.choices.shuffle(&mut rand::thread_rng());
+
+    let collection = mongodb_client.database("gre").collection("completions");
+    let insertion: Result<InsertOneResult, mongodb::error::Error> =
+        collection.insert_one(response.clone(), None).await;
+
+    insertion.expect("Could not save response to database!");
 
     response
 }
@@ -61,7 +71,7 @@ pub async fn get_completion(word: String) -> Result<SentenceCompletion, std::io:
     Ok(serde_json::from_str(content).unwrap())
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 #[serde(rename_all = "PascalCase")]
 pub struct SentenceCompletion {
     sentence: String,

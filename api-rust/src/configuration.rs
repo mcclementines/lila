@@ -3,6 +3,7 @@
 #[derive(serde::Deserialize)]
 pub struct Settings {
     pub application: ApplicationSettings,
+    pub database: DatabaseSettings,
 }
 
 #[derive(serde::Deserialize)]
@@ -10,6 +11,22 @@ pub struct ApplicationSettings {
     pub port: u16,
     pub host: String,
     pub allowed_origin: String,
+}
+
+#[derive(serde::Deserialize)]
+pub struct DatabaseSettings {
+    pub host: String,
+    pub username: String,
+    pub password: String,
+}
+
+impl DatabaseSettings {
+    pub fn connection_string(&self) -> String {
+        format!(
+            "mongodb+srv://{}:{}@{}",
+            self.username, self.password, self.host
+        )
+    }
 }
 
 pub struct ConfigureCors {
@@ -34,6 +51,11 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
         .add_source(config::File::from(
             configuration_directory.join(environment_filename),
         ))
+        .add_source(
+            config::Environment::with_prefix("LILA")
+                .prefix_separator("_")
+                .separator("__"),
+        )
         .build()?;
 
     settings.try_deserialize::<Settings>()
@@ -62,7 +84,7 @@ impl TryFrom<String> for Environment {
             "production" => Ok(Environment::Production),
             other => Err(format!(
                 "{} is not a supported environment.\
-                Use either 'local' or 'production'.",
+            Use either 'local' or 'production'.",
                 other
             )),
         }
