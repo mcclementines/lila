@@ -1,10 +1,11 @@
-use std::net::TcpListener;
+use std::{io, net::TcpListener};
 
 use api_rust::{
     configuration::{get_configuration, ConfigureCors},
     startup::run,
 };
 
+use mongodb::{Client};
 use tracing::subscriber::set_global_default;
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_log::LogTracer;
@@ -38,5 +39,15 @@ async fn main() -> Result<(), std::io::Error> {
         allowed_headers: vec!["X-Requested-With".into()],
     };
 
-    run(listener, cors)?.await
+    let client: Result<Client, mongodb::error::Error> =
+        Client::with_uri_str(configuration.database.connection_string()).await;
+
+    let client: Client = client.map_err(|err| {
+        std::io::Error::new(
+            io::ErrorKind::Other,
+            format!("MongoDB Client Error: {}", err),
+        )
+    })?;
+
+    run(listener, cors, client)?.await
 }

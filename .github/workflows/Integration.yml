@@ -19,7 +19,7 @@ jobs:
         working-directory: ${{github.workspace}}/api
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Setup Go
       uses: actions/setup-go@v4
@@ -57,7 +57,7 @@ jobs:
       packages: write
     
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Setup Node
         uses: actions/setup-node@v3

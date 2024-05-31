@@ -53,7 +53,7 @@ function SentenceCompletion() {
       <>
         <div className="w-full h-[calc(calc(var(--vh,1vh)*100)-4rem)] flex justify-center items-center">
           <div className="max-w-lg w-full px-4 md:px-8 mx-auto flex flex-col" style={{ height: '80vh' }}>
-            <p className="sr-only text-center text-xl md:text-3xl font-work-sans">Something is wrong! Please try again later.</p>
+            <p className="text-center text-3xl font-work-sans mt-auto mb-[70%]">Something is wrong! Please try again later.</p>
           </div>
         </div>
       </>
@@ -91,7 +91,7 @@ function SentenceCompletion() {
                   (
                     <div className="w-full h-[calc(calc(var(--vh,1vh)*100)-4rem)] flex justify-center items-center">
                       <div className="max-w-lg w-full px-4 md:px-8 mx-auto flex flex-col" style={{ height: '80vh' }}>
-                        <p className="sr-only text-center text-xl md:text-3xl font-work-sans">Something is wrong! Please try again later.</p>
+                        <p className="text-center text-3xl font-work-sans mt-auto mb-[70%]">Something is wrong! Please try again later.</p>
                       </div>
                     </div>
                   )
@@ -100,7 +100,7 @@ function SentenceCompletion() {
             </div>
             <div className="mt-auto mb-auto space-y-2">
               {data ? (data.Choices.map((choice, index) => (
-                <ActionButton color={processColor(index)} link="#" text={choice} key={index} onClick={() => handleClick(index)}/>
+                <ActionButton color={processColor(index)} text={choice} key={index} onClick={() => handleClick(index)}/>
               ))) : (<div></div>)}
             </div>
           </div>
