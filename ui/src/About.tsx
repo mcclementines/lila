@@ -25,7 +25,7 @@ function About() {
       </p>
       <br></br>
       <p>
-        Want to contribute? Check it out on <a className="text-indigo-700" href="https://www.github.com/mcclementines/lila">github</a>.
+        Want to contribute? Check lila out on <a className="text-indigo-700" href="https://www.github.com/mcclementines/lila">github</a>.
       </p>
       <br></br>
       <div className="w-full mx-auto text-center">
