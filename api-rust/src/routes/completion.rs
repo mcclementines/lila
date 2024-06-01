@@ -1,9 +1,17 @@
 //! src/routes/completion.rs
 
-use actix_web::{body::BoxBody, http::header::ContentType, web::{Data, self}, HttpResponse, Responder};
+use actix_web::{
+    body::BoxBody,
+    http::header::ContentType,
+    web::{self, Data},
+    HttpResponse, Responder,
+};
 use base64::Engine;
 use chrono::{DateTime, Utc};
-use mongodb::{Client, bson::{oid::ObjectId, doc}, Collection};
+use mongodb::{
+    bson::{doc, oid::ObjectId},
+    Client, Collection,
+};
 use openai_api_rust::{
     chat::{ChatApi, ChatBody},
     Auth, Message, OpenAI, Role,
@@ -28,13 +36,21 @@ pub async fn completion(
     response.choices.push(response.word.clone());
     response.choices.shuffle(&mut rand::thread_rng());
 
-    let collection: Collection<SentenceCompletionWithMeta> = mongodb_client.database("gre").collection("completions");
-    
-    let completion_record = SentenceCompletionWithMeta { views: 1, date: Utc::now(), sentence_completion: response.clone() };
+    let collection: Collection<SentenceCompletionWithMeta> =
+        mongodb_client.database("gre").collection("completions");
+
+    let completion_record = SentenceCompletionWithMeta {
+        views: 1,
+        date: Utc::now(),
+        sentence_completion: response.clone(),
+    };
     let record_completion = collection.insert_one(completion_record, None).await;
 
     match record_completion {
-        Ok(insertion) => tracing::info!("Recorded GRE Completion (id: {}) Successfully!", insertion.inserted_id.as_object_id().unwrap().to_hex()),
+        Ok(insertion) => tracing::info!(
+            "Recorded GRE Completion (id: {}) Successfully!",
+            insertion.inserted_id.as_object_id().unwrap().to_hex()
+        ),
         Err(_) => tracing::error!("Could not record GRE Completion!"),
     }
 
@@ -42,21 +58,22 @@ pub async fn completion(
 }
 
 #[tracing::instrument(skip_all)]
-pub async fn get_completion(
-    mongodb_client: Data<Client>,
-    id: web::Path<String>,
-) -> impl Responder {
+pub async fn get_completion(mongodb_client: Data<Client>, id: web::Path<String>) -> impl Responder {
     let id = id.into_inner();
     let id = match ObjectId::parse_str(id.clone()) {
         Ok(oid) => oid,
         Err(_) => {
             tracing::error!("Could not parse ObjectID from String ({})!", id);
-            panic!("{{\"msg\": \"Could not find specified completion.\",\"received_id\": \"{}\"}}", id);
-        },
+            panic!(
+                "{{\"msg\": \"Could not find specified completion.\",\"received_id\": \"{}\"}}",
+                id
+            );
+        }
     };
-    
-    let collection: Collection<SentenceCompletionWithMeta> = mongodb_client.database("gre").collection("completions");
-    let filter = doc!{"_id": id};
+
+    let collection: Collection<SentenceCompletionWithMeta> =
+        mongodb_client.database("gre").collection("completions");
+    let filter = doc! {"_id": id};
 
     let mut response: SentenceCompletionWithMeta = match collection.find_one(filter, None).await {
         Ok(doc) => match doc {
@@ -65,11 +82,17 @@ pub async fn get_completion(
         },
         Err(_) => {
             tracing::error!("Could not find Completion by ObjectID ({})!", id);
-            panic!("{{\"msg\": \"Could not find specified completion.\",\"received_id\": \"{}\"}}", id);
-        },
+            panic!(
+                "{{\"msg\": \"Could not find specified completion.\",\"received_id\": \"{}\"}}",
+                id
+            );
+        }
     };
-        
-    response.sentence_completion.choices.shuffle(&mut rand::thread_rng());
+
+    response
+        .sentence_completion
+        .choices
+        .shuffle(&mut rand::thread_rng());
 
     response.sentence_completion
 }

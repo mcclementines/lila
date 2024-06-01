@@ -9,7 +9,7 @@ use mongodb::Client;
 use crate::{
     configuration::ConfigureCors,
     dictionary::load_dictionary,
-    routes::{completion, health_check, get_completion},
+    routes::{completion, get_completion, health_check},
 };
 
 pub fn run(
