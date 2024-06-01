@@ -1,8 +1,17 @@
 //! src/routes/completion.rs
 
-use actix_web::{body::BoxBody, http::header::ContentType, web::Data, HttpResponse, Responder};
+use actix_web::{
+    body::BoxBody,
+    http::header::ContentType,
+    web::{self, Data},
+    HttpResponse, Responder,
+};
 use base64::Engine;
-use mongodb::{results::InsertOneResult, Client};
+use chrono::{DateTime, Utc};
+use mongodb::{
+    bson::{doc, oid::ObjectId},
+    Client, Collection,
+};
 use openai_api_rust::{
     chat::{ChatApi, ChatBody},
     Auth, Message, OpenAI, Role,
@@ -11,6 +20,7 @@ use rand::seq::SliceRandom;
 
 use crate::dictionary::WordDef;
 
+#[tracing::instrument(skip_all)]
 pub async fn completion(
     mongodb_client: Data<Client>,
     dictionary: Data<Vec<WordDef>>,
@@ -21,21 +31,73 @@ pub async fn completion(
         .word
         .to_owned();
 
-    let mut response = get_completion(word).await.unwrap();
+    let mut response = generate_completion(word).await.unwrap();
 
     response.choices.push(response.word.clone());
     response.choices.shuffle(&mut rand::thread_rng());
 
-    let collection = mongodb_client.database("gre").collection("completions");
-    let insertion: Result<InsertOneResult, mongodb::error::Error> =
-        collection.insert_one(response.clone(), None).await;
+    let collection: Collection<SentenceCompletionWithMeta> =
+        mongodb_client.database("gre").collection("completions");
 
-    insertion.expect("Could not save response to database!");
+    let completion_record = SentenceCompletionWithMeta {
+        views: 1,
+        date: Utc::now(),
+        sentence_completion: response.clone(),
+    };
+    let record_completion = collection.insert_one(completion_record, None).await;
+
+    match record_completion {
+        Ok(insertion) => tracing::info!(
+            "Recorded GRE Completion (id: {}) Successfully!",
+            insertion.inserted_id.as_object_id().unwrap().to_hex()
+        ),
+        Err(_) => tracing::error!("Could not record GRE Completion!"),
+    }
 
     response
 }
 
-pub async fn get_completion(word: String) -> Result<SentenceCompletion, std::io::Error> {
+#[tracing::instrument(skip_all)]
+pub async fn get_completion(mongodb_client: Data<Client>, id: web::Path<String>) -> impl Responder {
+    let id = id.into_inner();
+    let id = match ObjectId::parse_str(id.clone()) {
+        Ok(oid) => oid,
+        Err(_) => {
+            tracing::error!("Could not parse ObjectID from String ({})!", id);
+            panic!(
+                "{{\"msg\": \"Could not find specified completion.\",\"received_id\": \"{}\"}}",
+                id
+            );
+        }
+    };
+
+    let collection: Collection<SentenceCompletionWithMeta> =
+        mongodb_client.database("gre").collection("completions");
+    let filter = doc! {"_id": id};
+
+    let mut response: SentenceCompletionWithMeta = match collection.find_one(filter, None).await {
+        Ok(doc) => match doc {
+            Some(completion) => completion,
+            None => panic!("oh no!"),
+        },
+        Err(_) => {
+            tracing::error!("Could not find Completion by ObjectID ({})!", id);
+            panic!(
+                "{{\"msg\": \"Could not find specified completion.\",\"received_id\": \"{}\"}}",
+                id
+            );
+        }
+    };
+
+    response
+        .sentence_completion
+        .choices
+        .shuffle(&mut rand::thread_rng());
+
+    response.sentence_completion
+}
+
+pub async fn generate_completion(word: String) -> Result<SentenceCompletion, std::io::Error> {
     let auth = Auth::from_env().expect("Could not load OpenAI key");
     let openai = OpenAI::new(auth, "https://api.openai.com/v1/");
     let body = ChatBody {
@@ -77,6 +139,13 @@ pub struct SentenceCompletion {
     sentence: String,
     word: String,
     choices: Vec<String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct SentenceCompletionWithMeta {
+    views: u32,
+    date: DateTime<Utc>,
+    sentence_completion: SentenceCompletion,
 }
 
 impl Responder for SentenceCompletion {

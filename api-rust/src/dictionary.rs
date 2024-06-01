@@ -2,7 +2,7 @@
 
 use std::{fs::File, io::BufReader};
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct WordDef {
     pub word: String,
     pub pos: String,
