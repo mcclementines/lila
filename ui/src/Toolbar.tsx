@@ -1,7 +1,7 @@
 function Toolbar() {
   return (
     <nav className="flex flex-row h-16 w-full justify-between max-w-3xl mx-auto p-4">
-      <div className="w-28">
+      <div>
         <a href="/gre">
         <svg className="w-12 h-12 text-indigo-600 my-auto md:m-auto" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
           <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 12h14M5 12l4-4m-4 4 4 4"/>
