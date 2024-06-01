@@ -13,6 +13,7 @@ import SentenceCompletion from "./GRE/SentenceCompletion.tsx"
 import GREHome from "./GRE/GREHome.tsx"
 
 ReactGA.initialize("G-9GKMWWLJE6");
+ReactGA.send({hitType: "", page: window.location.pathname + window.location.search, title: window.location.pathname});
 
 const root = createBrowserRouter ([
   {
