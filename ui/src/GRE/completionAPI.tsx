@@ -7,17 +7,23 @@ type Completion = {
   Choices: string[];
 }
 
+type SentenceCompletionWithMeta = {
+  views: number;
+  date: string;
+  sentence_completion: Completion;
+}
+
 type UseCompletionAPIReturn = [
 error: null | boolean,
 isLoaded: boolean,
-data: null | Completion,
+data: null | SentenceCompletionWithMeta,
 getNext: () => void
 ];
 
 function useCompletionAPI(): UseCompletionAPIReturn {
   const [error, setError] = useState<null | boolean>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [data, setData] = useState<null | Completion>(null);
+  const [data, setData] = useState<null | SentenceCompletionWithMeta>(null);
   const [next, setNext] = useState(true);
 
   const getNext = useCallback(() => {
@@ -30,7 +36,7 @@ function useCompletionAPI(): UseCompletionAPIReturn {
   useEffect(() => {
     if (next === true) {
       (async () => {
-        axios.get<Completion>(import.meta.env.VITE_REACT_APP_API_URL + "/completion")
+        axios.get<SentenceCompletionWithMeta>(import.meta.env.VITE_REACT_APP_API_URL + "/completion")
           .then(response => {
             setData(response.data);
           })

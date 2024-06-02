@@ -26,7 +26,7 @@ function SentenceCompletion() {
   function handleClick(key: number) {
     let isCorrect = false;
 
-    if (data?.Choices[key] === data?.Word) {
+    if (data?.sentence_completion.Choices[key] === data?.sentence_completion.Word) {
       isCorrect = true;
     }
 
@@ -41,7 +41,7 @@ function SentenceCompletion() {
         return "red";
       }
     } else if (selected.key != -1) {
-      if (data?.Choices[key] == data?.Word) return "green";
+      if (data?.sentence_completion.Choices[key] == data?.sentence_completion.Word) return "green";
       return "gray";
     }
 
@@ -80,7 +80,7 @@ function SentenceCompletion() {
           <div className="max-w-lg w-full h-full px-4 md:px-8 mx-auto flex flex-col">
             <div className='bg-indigo-600 rounded-3xl drop-shadow-xl border-b-8 border-indigo-700 p-4 md:p-8 my-auto'>
               <h1 className="text-center text-xl md:text-3xl text-white font-work-sans">
-                {data ? (reactStringReplace(data.Sentence, /@+/g, (match,i) => (
+                {data ? (reactStringReplace(data.sentence_completion.Sentence, /@+/g, (match,i) => (
                   <span key={i}>
                     <span className='underline whitespace-pre'>
                       {" ".repeat(14)}
@@ -99,7 +99,7 @@ function SentenceCompletion() {
               </h1>
             </div>
             <div className="mt-auto mb-auto space-y-2">
-              {data ? (data.Choices.map((choice, index) => (
+              {data ? (data.sentence_completion.Choices.map((choice, index) => (
                 <ActionButton color={processColor(index)} text={choice} key={index} onClick={() => handleClick(index)}/>
               ))) : (<div></div>)}
             </div>
