@@ -6,7 +6,6 @@ use actix_web::{
     web::{self, Data},
     HttpResponse, Responder,
 };
-use base64::Engine;
 use chrono::{DateTime, Utc};
 use mongodb::{bson::doc, Client, Collection};
 use openai_api_rust::{
@@ -40,7 +39,18 @@ pub async fn completion(
     let collection: Collection<SentenceCompletionWithMeta> =
         mongodb_client.database("gre").collection("completions");
 
-    let key = generate_base62_string(6);
+    let mut key = generate_base62_string(6);
+    let mut filter = doc! { "key": key.clone() };
+
+    while match collection.find_one(filter, None).await {
+        Ok(doc) => doc.is_some(),
+        Err(_) => panic!("oh no!"),
+    } {
+        tracing::warn!("Key {} already exists; regenerating.", &key);
+        key = generate_base62_string(6);
+        filter = doc! { "key": key.clone() };
+    }
+
     let completion_record = SentenceCompletionWithMeta {
         key: key.clone(),
         views: 1,
@@ -129,9 +139,6 @@ pub async fn generate_completion(word: String) -> Result<SentenceCompletion, std
     let rs = openai.chat_completion_create(&body);
     let choice = rs.unwrap().choices;
     let content = &choice[0].message.as_ref().unwrap().content.trim();
-
-    let encoded_completion = base64::engine::general_purpose::URL_SAFE.encode(content);
-    tracing::info!("{}", encoded_completion);
 
     Ok(serde_json::from_str(content).unwrap())
 }
