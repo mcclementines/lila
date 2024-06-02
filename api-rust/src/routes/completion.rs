@@ -31,10 +31,14 @@ pub async fn completion(
         .word
         .to_owned();
 
-    let mut response = generate_completion(word).await.unwrap();
+    let mut generated_completion = generate_completion(word).await.unwrap();
 
-    response.choices.push(response.word.clone());
-    response.choices.shuffle(&mut rand::thread_rng());
+    generated_completion
+        .choices
+        .push(generated_completion.word.clone());
+    generated_completion
+        .choices
+        .shuffle(&mut rand::thread_rng());
 
     let collection: Collection<SentenceCompletionWithMeta> =
         mongodb_client.database("gre").collection("completions");
@@ -42,7 +46,7 @@ pub async fn completion(
     let completion_record = SentenceCompletionWithMeta {
         views: 1,
         date: Utc::now(),
-        sentence_completion: response.clone(),
+        sentence_completion: generated_completion,
     };
     let record_completion = collection.insert_one(completion_record.clone(), None).await;
 
@@ -58,7 +62,10 @@ pub async fn completion(
 }
 
 #[tracing::instrument(skip_all)]
-pub async fn get_completion(mongodb_client: Data<Client>, id: web::Path<String>) -> impl Responder {
+pub async fn completion_by_id(
+    mongodb_client: Data<Client>,
+    id: web::Path<String>,
+) -> impl Responder {
     let id = id.into_inner();
     let id = match ObjectId::parse_str(id.clone()) {
         Ok(oid) => oid,
@@ -73,9 +80,9 @@ pub async fn get_completion(mongodb_client: Data<Client>, id: web::Path<String>)
 
     let collection: Collection<SentenceCompletionWithMeta> =
         mongodb_client.database("gre").collection("completions");
-    let filter = doc! {"_id": id};
+    let filter = doc! { "_id": id };
 
-    let mut response: SentenceCompletionWithMeta = match collection.find_one(filter, None).await {
+    let mut completion: SentenceCompletionWithMeta = match collection.find_one(filter, None).await {
         Ok(doc) => match doc {
             Some(completion) => completion,
             None => panic!("oh no!"),
@@ -89,12 +96,12 @@ pub async fn get_completion(mongodb_client: Data<Client>, id: web::Path<String>)
         }
     };
 
-    response
+    completion
         .sentence_completion
         .choices
         .shuffle(&mut rand::thread_rng());
 
-    response.sentence_completion
+    completion
 }
 
 pub async fn generate_completion(word: String) -> Result<SentenceCompletion, std::io::Error> {
