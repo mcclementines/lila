@@ -8,8 +8,8 @@ use mongodb::Client;
 
 use crate::{
     configuration::ConfigureCors,
-    dictionary::load_dictionary,
-    routes::{completion, completion_by_id, health_check},
+    routes::{completion, completion_by_key, health_check},
+    utils::dictionary::load_dictionary,
 };
 
 pub fn run(
@@ -38,7 +38,7 @@ pub fn run(
             .app_data(mongodb_client.to_owned())
             .route("/health_check", web::get().to(health_check))
             .route("/completion", web::get().to(completion))
-            .route("/completion/{id}", web::get().to(completion_by_id))
+            .route("/completion/{id}", web::get().to(completion_by_key))
     })
     .listen(listener)?
     .run();

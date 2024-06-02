@@ -1,4 +1,4 @@
-//! src/dictionary.rs
+//! src/utils/dictionary.rs
 
 use std::{fs::File, io::BufReader};
 

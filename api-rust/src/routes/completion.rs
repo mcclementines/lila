@@ -8,17 +8,14 @@ use actix_web::{
 };
 use base64::Engine;
 use chrono::{DateTime, Utc};
-use mongodb::{
-    bson::{doc, oid::ObjectId},
-    Client, Collection,
-};
+use mongodb::{bson::doc, Client, Collection};
 use openai_api_rust::{
     chat::{ChatApi, ChatBody},
     Auth, Message, OpenAI, Role,
 };
 use rand::seq::SliceRandom;
 
-use crate::dictionary::WordDef;
+use crate::utils::{dictionary::WordDef, random_string::generate_base62_string};
 
 #[tracing::instrument(skip_all)]
 pub async fn completion(
@@ -43,18 +40,17 @@ pub async fn completion(
     let collection: Collection<SentenceCompletionWithMeta> =
         mongodb_client.database("gre").collection("completions");
 
+    let key = generate_base62_string(6);
     let completion_record = SentenceCompletionWithMeta {
+        key: key.clone(),
         views: 1,
-        date: Utc::now(),
+        created_date: Utc::now(),
         sentence_completion: generated_completion,
     };
     let record_completion = collection.insert_one(completion_record.clone(), None).await;
 
     match record_completion {
-        Ok(insertion) => tracing::info!(
-            "Recorded GRE Completion (id: {}) Successfully!",
-            insertion.inserted_id.as_object_id().unwrap().to_hex()
-        ),
+        Ok(_) => tracing::info!("Recorded GRE Completion (key: {}) Successfully!", key),
         Err(_) => tracing::error!("Could not record GRE Completion!"),
     }
 
@@ -62,39 +58,39 @@ pub async fn completion(
 }
 
 #[tracing::instrument(skip_all)]
-pub async fn completion_by_id(
+pub async fn completion_by_key(
     mongodb_client: Data<Client>,
-    id: web::Path<String>,
+    key: web::Path<String>,
 ) -> impl Responder {
-    let id = id.into_inner();
-    let id = match ObjectId::parse_str(id.clone()) {
-        Ok(oid) => oid,
-        Err(_) => {
-            tracing::error!("Could not parse ObjectID from String ({})!", id);
-            panic!(
-                "{{\"msg\": \"Could not find specified completion.\",\"received_id\": \"{}\"}}",
-                id
-            );
-        }
-    };
+    let key = key.into_inner();
 
     let collection: Collection<SentenceCompletionWithMeta> =
         mongodb_client.database("gre").collection("completions");
-    let filter = doc! { "_id": id };
+    let filter = doc! { "key": key.clone() };
 
-    let mut completion: SentenceCompletionWithMeta = match collection.find_one(filter, None).await {
-        Ok(doc) => match doc {
-            Some(completion) => completion,
-            None => panic!("oh no!"),
-        },
-        Err(_) => {
-            tracing::error!("Could not find Completion by ObjectID ({})!", id);
-            panic!(
-                "{{\"msg\": \"Could not find specified completion.\",\"received_id\": \"{}\"}}",
-                id
+    let mut completion: SentenceCompletionWithMeta =
+        match collection.find_one(filter.clone(), None).await {
+            Ok(doc) => match doc {
+                Some(completion) => completion,
+                None => panic!("oh no!"),
+            },
+            Err(_) => {
+                tracing::error!("Could not find Completion by key ({})!", &key);
+                panic!(
+                "{{\"msg\": \"Could not find specified completion.\",\"received_key\": \"{}\"}}",
+                key
             );
+            }
+        };
+
+    let update_views = doc! { "$set": { "views": completion.views + 1 } };
+    match collection.update_one(filter, update_views, None).await {
+        Ok(_) => {
+            tracing::info!("Updated view count for completion {} successfully!", &key);
+            completion.views += 1;
         }
-    };
+        Err(_) => tracing::warn!("Could not update view count for completion {}", &key),
+    }
 
     completion
         .sentence_completion
@@ -111,7 +107,7 @@ pub async fn generate_completion(word: String) -> Result<SentenceCompletion, std
         model: String::from("ft:gpt-3.5-turbo-0613:personal::7qy7H9zA"),
         max_tokens: Some(128),
         temperature: None,    //Some(0.5_f32),
-        top_p: Some(0.5_f32), //None,
+        top_p: Some(0.4_f32), //None,
         n: Some(1),
         stream: Some(false),
         stop: Some(vec![String::from("###")]),
@@ -162,8 +158,9 @@ impl Responder for SentenceCompletion {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct SentenceCompletionWithMeta {
+    key: String,
     views: u32,
-    date: DateTime<Utc>,
+    created_date: DateTime<Utc>,
     sentence_completion: SentenceCompletion,
 }
 

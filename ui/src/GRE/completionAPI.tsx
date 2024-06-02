@@ -8,8 +8,9 @@ type Completion = {
 }
 
 type SentenceCompletionWithMeta = {
+  key: string;
   views: number;
-  date: string;
+  created_date: string;
   sentence_completion: Completion;
 }
 
