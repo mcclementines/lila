@@ -44,7 +44,7 @@ pub async fn completion(
         date: Utc::now(),
         sentence_completion: response.clone(),
     };
-    let record_completion = collection.insert_one(completion_record, None).await;
+    let record_completion = collection.insert_one(completion_record.clone(), None).await;
 
     match record_completion {
         Ok(insertion) => tracing::info!(
@@ -54,7 +54,7 @@ pub async fn completion(
         Err(_) => tracing::error!("Could not record GRE Completion!"),
     }
 
-    response
+    completion_record
 }
 
 #[tracing::instrument(skip_all)]
@@ -141,6 +141,18 @@ pub struct SentenceCompletion {
     choices: Vec<String>,
 }
 
+impl Responder for SentenceCompletion {
+    type Body = BoxBody;
+
+    fn respond_to(self, _req: &actix_web::HttpRequest) -> HttpResponse<Self::Body> {
+        let body = serde_json::to_string(&self).unwrap();
+
+        HttpResponse::Ok()
+            .content_type(ContentType::json())
+            .body(body)
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct SentenceCompletionWithMeta {
     views: u32,
@@ -148,7 +160,7 @@ pub struct SentenceCompletionWithMeta {
     sentence_completion: SentenceCompletion,
 }
 
-impl Responder for SentenceCompletion {
+impl Responder for SentenceCompletionWithMeta {
     type Body = BoxBody;
 
     fn respond_to(self, _req: &actix_web::HttpRequest) -> HttpResponse<Self::Body> {
