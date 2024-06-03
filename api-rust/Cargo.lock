@@ -212,6 +212,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe"
 
 [[package]]
+name = "advanced-random-string"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85551a09efb3e49486e708fed774581d0499153e8d9737c4b52ccd2b836fc2df"
+dependencies = [
+ "rand 0.8.5",
+]
+
+[[package]]
 name = "ahash"
 version = "0.7.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -280,7 +289,7 @@ version = "0.1.0"
 dependencies = [
  "actix-cors",
  "actix-web",
- "base64 0.21.7",
+ "advanced-random-string",
  "chrono",
  "config",
  "futures",
