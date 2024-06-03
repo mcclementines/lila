@@ -6,7 +6,7 @@ interface Props {
 }
 
 function ActionButton(props:Props) {
-  let onClick = props.onClick != undefined ? props.onClick : () => {};
+  const onClick = props.onClick != undefined ? props.onClick : () => {};
 
   let className = "shadow-md h-14 flex text-center text-l font-work-sans rounded-xl border-b-4";
 

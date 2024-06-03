@@ -25,26 +25,24 @@ function useCompletionByKeyAPI(key: string | undefined): UseCompletionByKeyAPIRe
   const [isLoaded, setIsLoaded] = useState(false);
   const [data, setData] = useState<null | SentenceCompletionWithMeta>(null);
 
-  if (key === undefined) {
-    setError(true);
-
-    return [error, isLoaded, data];
-  }
-
   useEffect(()=>{
-    (async () => {
-      axios.get<SentenceCompletionWithMeta>(import.meta.env.VITE_REACT_APP_API_URL + "/completion/" + key)
-        .then(response => {
-          setData(response.data);
-        })
-        .catch(error => {
-          console.error(error.message);
-          setError(true);
-        })
-        .finally(() => {
-          setIsLoaded(true);
-        });
-    })();
+    if (key === undefined) {
+      setError(true);
+    } else {
+      (async () => { 
+        axios.get<SentenceCompletionWithMeta>(import.meta.env.VITE_REACT_APP_API_URL + "/completion/" + key)
+          .then(response => {
+            setData(response.data);
+          })
+          .catch(error => {
+            console.error(error.message);
+            setError(true);
+          })
+          .finally(() => {
+            setIsLoaded(true);
+          });
+      })();
+    }
   }, [key])
 
   return [error, isLoaded, data];

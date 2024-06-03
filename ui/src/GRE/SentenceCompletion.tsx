@@ -2,7 +2,7 @@ import useCompletionAPI from "./completionAPI";
 import { useNavigate } from 'react-router-dom';
 
 function SentenceCompletion() {
-  const [error, isLoaded, data, _] = useCompletionAPI();
+  const [error, isLoaded, data] = useCompletionAPI();
   const navigate = useNavigate();
 
   if (error) {

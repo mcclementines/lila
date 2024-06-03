@@ -1,50 +1,38 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from 'axios';
 
 type Key = {
-  key: String;
+  key: string;
 }
 
 type UseCompletionAPIReturn = [
 error: null | boolean,
 isLoaded: boolean,
 data: null | Key,
-getNext: () => void
 ];
 
 function useCompletionAPI(): UseCompletionAPIReturn {
   const [error, setError] = useState<null | boolean>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [data, setData] = useState<null | Key>(null);
-  const [next, setNext] = useState(true);
-
-  const getNext = useCallback(() => {
-    setError(null);
-    setIsLoaded(false);
-    setData(null);
-    setNext(true);
-  }, []);
 
   useEffect(() => {
-    if (next === true) {
-      (async () => {
-        axios.get<Key>(import.meta.env.VITE_REACT_APP_API_URL + "/completion")
-          .then(response => {
-            setData(response.data);
-          })
-          .catch(error => {
-            console.error(error.message);
-            setError(true);
-          })
-          .finally(() => {
-            setIsLoaded(true);
-            setNext(false);
-          });
-      })();
-    }
-  }, [next]);
+    (async () => {
+      axios.get<Key>(import.meta.env.VITE_REACT_APP_API_URL + "/completion")
+        .then(response => {
+          setData(response.data);
+        })
+        .catch(error => {
+          console.error(error.message);
+          setError(true);
+        })
+        .finally(() => {
+          setIsLoaded(true);
+        });
+    })();
+  }, []);
 
-  return [error, isLoaded, data, getNext];
+  return [error, isLoaded, data];
 }
 
 export default useCompletionAPI;

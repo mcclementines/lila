@@ -3,15 +3,14 @@ import ActionButton from "../ActionButton";
 import { useEffect, useState } from 'react';
 import Selected from './SentenceCompletion';
 import { useNavigate, useParams } from 'react-router-dom';
-import useCompletionByKeyAPI from './completionByKeyAPI';
-import { SentenceCompletionWithMeta } from './completionAPI';
+import useCompletionByKeyAPI, { SentenceCompletionWithMeta } from './completionByKeyAPI';
 
-export interface Selected {
+interface Selected {
   key: number;
   isCorrect: boolean | null;
 }
 
-export function processColor(key: number, selected: Selected, data: SentenceCompletionWithMeta) : string {
+function processColor(key: number, selected: Selected, data: SentenceCompletionWithMeta) : string {
   if (selected.key != -1 && selected.key === key) {
     if (selected.isCorrect) {
       return "green";
@@ -40,7 +39,7 @@ function SentenceCompletionByKey() {
 
       return () => clearTimeout(reload);
     }
-  }, [selected])
+  }, [selected, navigate])
 
   function handleClick(key: number) {
     let isCorrect = false;
