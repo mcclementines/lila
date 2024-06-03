@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
-import axios from 'axios';
+import axios from "axios";
 
 type Key = {
   key: string;
-}
+};
 
 type UseCompletionAPIReturn = [
-error: null | boolean,
-isLoaded: boolean,
-data: null | Key,
+  error: null | boolean,
+  isLoaded: boolean,
+  data: null | Key,
 ];
 
 function useCompletionAPI(): UseCompletionAPIReturn {
@@ -18,11 +18,12 @@ function useCompletionAPI(): UseCompletionAPIReturn {
 
   useEffect(() => {
     (async () => {
-      axios.get<Key>(import.meta.env.VITE_REACT_APP_API_URL + "/completion")
-        .then(response => {
+      axios
+        .get<Key>(import.meta.env.VITE_REACT_APP_API_URL + "/completion")
+        .then((response) => {
           setData(response.data);
         })
-        .catch(error => {
+        .catch((error) => {
           console.error(error.message);
           setError(true);
         })

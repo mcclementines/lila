@@ -1,43 +1,43 @@
-import "./index.css"
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import App from './App.tsx'
-import AppView from './AppView.tsx'
-import Home from './Home.tsx'
-import About from "./About.tsx"
-import CreateAccount from './CreateAccount.tsx'
-import Login from './Login.tsx'
-import SentenceCompletion from "./GRE/SentenceCompletion.tsx"
-import SentenceCompletionByKey from "./GRE/SentenceCompletionByKey.tsx"
-import GREHome from "./GRE/GREHome.tsx"
+import "./index.css";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import App from "./App.tsx";
+import AppView from "./AppView.tsx";
+import Home from "./Home.tsx";
+import About from "./About.tsx";
+import CreateAccount from "./CreateAccount.tsx";
+import Login from "./Login.tsx";
+import SentenceCompletion from "./GRE/SentenceCompletion.tsx";
+import SentenceCompletionByKey from "./GRE/SentenceCompletionByKey.tsx";
+import GREHome from "./GRE/GREHome.tsx";
 
-const root = createBrowserRouter ([
+const root = createBrowserRouter([
   {
     path: "/",
     element: <App />,
     children: [
       {
         path: "/",
-        element: <Home />
+        element: <Home />,
       },
       {
         path: "/about",
-        element: <About />
+        element: <About />,
       },
       {
         path: "/createAccount",
-        element: <CreateAccount />
+        element: <CreateAccount />,
       },
       {
         path: "/login",
-        element: <Login />
+        element: <Login />,
       },
       {
         path: "/gre",
-        element: <GREHome />
+        element: <GREHome />,
       },
-    ]
+    ],
   },
   {
     path: "/",
@@ -51,12 +51,12 @@ const root = createBrowserRouter ([
         path: "/gre/completion/:key",
         element: <SentenceCompletionByKey />,
       },
-    ]
-  }
-])
+    ],
+  },
+]);
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <RouterProvider router={root} />
   </React.StrictMode>,
-)
+);

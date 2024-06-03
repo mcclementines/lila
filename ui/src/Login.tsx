@@ -1,4 +1,4 @@
-import ActionButton from "./ActionButton"
+import ActionButton from "./ActionButton";
 
 function Login() {
   return (
@@ -7,7 +7,7 @@ function Login() {
         <ActionButton link="/gre" color="grey" text="Login" />
       </div>
     </>
-  )
+  );
 }
 
-export default Login
+export default Login;
