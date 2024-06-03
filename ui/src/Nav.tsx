@@ -5,7 +5,7 @@ function Nav() {
         <a href="/">lila</a>
       </span>
     </nav>
-  )
+  );
 }
 
-export default Nav
+export default Nav;

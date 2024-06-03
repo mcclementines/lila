@@ -1,4 +1,4 @@
-import ActionButton from "./ActionButton"
+import ActionButton from "./ActionButton";
 
 function CreateAccount() {
   return (
@@ -7,7 +7,7 @@ function CreateAccount() {
         <ActionButton color="grey" text="Create Account" link="/gre" />
       </div>
     </>
-  )
+  );
 }
 
-export default CreateAccount
+export default CreateAccount;

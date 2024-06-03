@@ -53,7 +53,7 @@ pub async fn completion(
 
     let completion_record = SentenceCompletionWithMeta {
         key: key.clone(),
-        views: 1,
+        views: 0,
         created_date: Utc::now(),
         sentence_completion: generated_completion,
     };
@@ -64,7 +64,9 @@ pub async fn completion(
         Err(_) => tracing::error!("Could not record GRE Completion!"),
     }
 
-    completion_record
+    Key {
+        key: completion_record.key,
+    }
 }
 
 #[tracing::instrument(skip_all)]
@@ -141,6 +143,23 @@ pub async fn generate_completion(word: String) -> Result<SentenceCompletion, std
     let content = &choice[0].message.as_ref().unwrap().content.trim();
 
     Ok(serde_json::from_str(content).unwrap())
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct Key {
+    key: String,
+}
+
+impl Responder for Key {
+    type Body = BoxBody;
+
+    fn respond_to(self, _req: &actix_web::HttpRequest) -> HttpResponse<Self::Body> {
+        let body = serde_json::to_string(&self).unwrap();
+
+        HttpResponse::Ok()
+            .content_type(ContentType::json())
+            .body(body)
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]

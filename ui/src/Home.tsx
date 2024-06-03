@@ -1,13 +1,15 @@
-import ActionButton from "./ActionButton.tsx"
+import ActionButton from "./ActionButton.tsx";
 
 function Home() {
   return (
     <>
       <div className="w-full max-w-lg h-[calc(calc(var(--vh,1vh)_*_100)_-_4rem)] justify-center px-8 mx-auto">
         <div className="flex h-[calc(var(--vh,1vh)_*_50)]">
-          <div className='flex m-auto bg-indigo-600 rounded-3xl drop-shadow-xl border-b-8 border-indigo-700 p-8 md:p-12'>
+          <div className="flex m-auto bg-indigo-600 rounded-3xl drop-shadow-xl border-b-8 border-indigo-700 p-8 md:p-12">
             <h1 className="text-center m-auto text-3xl text-white font-work-sans">
-              Test prep books are so <span className='underline whitespace-pre'>{" ".repeat(14)}</span> boring, I just want to practice!
+              Test prep books are so{" "}
+              <span className="underline whitespace-pre">{" ".repeat(14)}</span>{" "}
+              boring, I just want to practice!
             </h1>
           </div>
         </div>
@@ -26,7 +28,7 @@ function Home() {
         </div>
       </div>
     </>
-  )
+  );
 }
 
-export default Home
+export default Home;
