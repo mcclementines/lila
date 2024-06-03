@@ -1,30 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import axios from 'axios';
 
-type Completion = {
-  Sentence: string;
-  Word: string;
-  Choices: string[];
-}
-
-type SentenceCompletionWithMeta = {
-  key: string;
-  views: number;
-  created_date: string;
-  sentence_completion: Completion;
+type Key = {
+  key: String;
 }
 
 type UseCompletionAPIReturn = [
 error: null | boolean,
 isLoaded: boolean,
-data: null | SentenceCompletionWithMeta,
+data: null | Key,
 getNext: () => void
 ];
 
 function useCompletionAPI(): UseCompletionAPIReturn {
   const [error, setError] = useState<null | boolean>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [data, setData] = useState<null | SentenceCompletionWithMeta>(null);
+  const [data, setData] = useState<null | Key>(null);
   const [next, setNext] = useState(true);
 
   const getNext = useCallback(() => {
@@ -37,7 +28,7 @@ function useCompletionAPI(): UseCompletionAPIReturn {
   useEffect(() => {
     if (next === true) {
       (async () => {
-        axios.get<SentenceCompletionWithMeta>(import.meta.env.VITE_REACT_APP_API_URL + "/completion")
+        axios.get<Key>(import.meta.env.VITE_REACT_APP_API_URL + "/completion")
           .then(response => {
             setData(response.data);
           })

@@ -9,6 +9,7 @@ import About from "./About.tsx"
 import CreateAccount from './CreateAccount.tsx'
 import Login from './Login.tsx'
 import SentenceCompletion from "./GRE/SentenceCompletion.tsx"
+import SentenceCompletionByKey from "./GRE/SentenceCompletionByKey.tsx"
 import GREHome from "./GRE/GREHome.tsx"
 
 const root = createBrowserRouter ([
@@ -45,6 +46,10 @@ const root = createBrowserRouter ([
       {
         path: "/gre/completion",
         element: <SentenceCompletion />,
+      },
+      {
+        path: "/gre/completion/:key",
+        element: <SentenceCompletionByKey />,
       },
     ]
   }
