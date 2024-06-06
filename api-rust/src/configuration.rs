@@ -31,8 +31,8 @@ impl DatabaseSettings {
 
 pub struct ConfigureCors {
     pub allowed_origin: String,
-    pub allowed_methods: Vec<String>,
-    pub allowed_headers: Vec<String>,
+    pub allowed_methods: Vec<&'static str>,
+    pub allowed_headers: Vec<&'static str>,
 }
 
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {
