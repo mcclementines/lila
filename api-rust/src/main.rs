@@ -10,6 +10,7 @@ use tracing::subscriber::set_global_default;
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_log::LogTracer;
 use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, EnvFilter, Registry};
+use vec_string_to_static_str::vec_string_to_static_str;
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
@@ -35,8 +36,8 @@ async fn main() -> Result<(), std::io::Error> {
 
     let cors = ConfigureCors {
         allowed_origin: configuration.application.allowed_origin.clone(),
-        allowed_methods: vec!["GET".into(), "POST".into()],
-        allowed_headers: vec!["X-Requested-With".into()],
+        allowed_methods: vec_string_to_static_str(&vec![String::from("GET"), String::from("POST")]),
+        allowed_headers: vec_string_to_static_str(&vec![String::from("X-Requested-With")]),
     };
 
     let client: Result<Client, mongodb::error::Error> =

@@ -303,6 +303,7 @@ dependencies = [
  "tracing-bunyan-formatter",
  "tracing-log 0.1.4",
  "tracing-subscriber",
+ "vec-string-to-static-str",
 ]
 
 [[package]]
@@ -2880,6 +2881,12 @@ name = "valuable"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
+
+[[package]]
+name = "vec-string-to-static-str"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d9f9ceadc985e371fb6dc7a98d2092abd9f1597075ae05155b4630edf32a929"
 
 [[package]]
 name = "version_check"

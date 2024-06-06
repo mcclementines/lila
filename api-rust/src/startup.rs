@@ -22,8 +22,8 @@ pub fn run(
 
     let server = HttpServer::new(move || {
         let mut cors = Cors::default()
-            .allowed_headers::<Vec<String>, String>(cors_config.allowed_headers.clone())
-            .allowed_methods(vec!["GET", "POST"]); // strongly dislike
+            .allowed_headers(cors_config.allowed_headers.clone())
+            .allowed_methods(cors_config.allowed_methods.clone());
 
         if cors_config.allowed_origin == "*" {
             cors = cors.allow_any_origin().send_wildcard();
