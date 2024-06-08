@@ -1,9 +1,167 @@
-import useCompletionAPI from "./completionAPI";
-import { useNavigate } from "react-router-dom";
+import reactStringReplace from "react-string-replace";
+import ActionButton from "../ActionButton";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Selected from "./SentenceCompletion";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  SentenceCompletionWithMeta,
+  loadCompletionByKey,
+} from "./completionAPI";
+import { genCompletionKey } from "./completionAPI";
 
-function SentenceCompletion() {
-  const [error, isLoaded, data] = useCompletionAPI();
+interface Selected {
+  key: number;
+  isCorrect: boolean | null;
+}
+
+function processColor(
+  key: number,
+  selected: Selected,
+  data: SentenceCompletionWithMeta,
+): string {
+  if (selected.key != -1 && selected.key === key) {
+    if (selected.isCorrect) {
+      return "green";
+    } else {
+      return "red";
+    }
+  } else if (selected.key != -1) {
+    if (
+      data?.sentence_completion.Choices[key] == data?.sentence_completion.Word
+    )
+      return "green";
+    return "gray";
+  }
+
+  return "secondary";
+}
+
+function SentenceCompletionByKey() {
+  const { key } = useParams();
   const navigate = useNavigate();
+
+  const initialLoad = useRef<boolean>(false);
+  const [error, setError] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [data, setData] = useState<SentenceCompletionWithMeta | null>(null);
+  const [keys, setKeys] = useState<string[]>([]);
+  const [selected, setSelected] = useState<Selected>({
+    key: -1,
+    isCorrect: null,
+  });
+
+  const loadKey = useCallback(
+    async (key: string) => {
+      const completion = await loadCompletionByKey(key);
+
+      setData(completion);
+      setSelected({ key: -1, isCorrect: null });
+      setIsLoaded(true);
+      navigate(`/gre/completion/${completion.key}`, { replace: true });
+    },
+    [navigate],
+  );
+
+  const genKey = useCallback(async (): Promise<string> => {
+    return genCompletionKey();
+  }, []);
+
+  // load initial key
+  useEffect(() => {
+    if (initialLoad.current) return;
+
+    const initialKeys = async () => {
+      try {
+        const keys = await Promise.all([1, 2, 3, 4, 5].map(() => genKey()));
+        console.log(keys);
+        setKeys(keys);
+      } catch (error) {
+        console.log(error);
+
+        setError(true);
+      }
+    };
+
+    if (key === undefined) {
+      const initialKey = async () => {
+        try {
+          const key = await genKey();
+          await loadKey(key);
+        } catch (error) {
+          console.log(error);
+          setError(true);
+        }
+      };
+
+      initialKey();
+      initialKeys();
+      initialLoad.current = true;
+
+      return;
+    }
+
+    loadKey(key);
+    initialKeys();
+    initialLoad.current = true;
+  }, [genKey, loadKey, key]);
+
+  useEffect(() => {
+    console.log("keys: " + keys);
+    if (keys.length < 5) {
+      const addKey = async () => {
+        try {
+          const key = await genKey();
+          setKeys((keys) => [...keys, key]);
+        } catch (error) {
+          console.log(error);
+
+          setError(true);
+        }
+      };
+      addKey();
+    }
+  }, [keys, genKey]);
+
+  // load next key
+  useEffect(() => {
+    if (selected.key != -1) {
+      const reload = setTimeout(() => {
+        const reloadKey = async () => {
+          try {
+            let key: string;
+
+            if (keys.length < 1) {
+              key = await genKey();
+            } else {
+              key = keys[0];
+              setKeys((keys) => keys.slice(1));
+            }
+
+            await loadKey(key);
+          } catch (error) {
+            console.log(error);
+            setError(true);
+          }
+        };
+
+        reloadKey();
+      }, 1500);
+
+      return () => clearTimeout(reload);
+    }
+  }, [selected, genKey, loadKey, keys]);
+
+  function handleClick(key: number) {
+    let isCorrect = false;
+
+    if (
+      data?.sentence_completion.Choices[key] === data?.sentence_completion.Word
+    ) {
+      isCorrect = true;
+    }
+
+    setSelected({ key: key, isCorrect: isCorrect });
+  }
 
   if (error) {
     return (
@@ -32,17 +190,70 @@ function SentenceCompletion() {
               Loading...
             </p>
             <div className="flex flex-row space-x-2 mx-auto pt-20">
-              <div className="h-6 w-6 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-              <div className="h-6 w-6 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-              <div className="h-6 w-6 bg-indigo-600 rounded-full animate-bounce"></div>
+              {/*              <div className="h-6 w-6 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>*/}
+              {/*              <div className="h-6 w-6 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>*/}
+              {/*              <div className="h-6 w-6 bg-indigo-600 rounded-full animate-bounce"></div> */}
             </div>
           </div>
         </div>
       </>
     );
   } else {
-    navigate("/gre/completion/" + data?.key);
+    return (
+      <>
+        <div className="w-full h-[calc(calc(var(--vh,1vh)*100)-4rem)] flex justify-center items-center">
+          <div className="max-w-lg w-full h-full px-4 md:px-8 mx-auto flex flex-col">
+            <div className="bg-indigo-600 rounded-3xl drop-shadow-xl border-b-8 border-indigo-700 p-4 md:p-8 my-auto">
+              <h1 className="text-center text-xl md:text-3xl text-white font-work-sans">
+                {data ? (
+                  reactStringReplace(
+                    data.sentence_completion.Sentence,
+                    /@+/g,
+                    (match, i) => (
+                      <span key={i}>
+                        <span className="underline whitespace-pre">
+                          {" ".repeat(14)}
+                        </span>
+                        {match.length > 0 && match[0].match(/^[a-z0-9]+$/i)
+                          ? " "
+                          : ""}
+                        {match}
+                      </span>
+                    ),
+                  )
+                ) : (
+                  <div className="w-full h-[calc(calc(var(--vh,1vh)*100)-4rem)] flex justify-center items-center">
+                    <div
+                      className="max-w-lg w-full px-4 md:px-8 mx-auto flex flex-col"
+                      style={{ height: "80vh" }}
+                    >
+                      <p className="text-center text-3xl font-work-sans mt-auto mb-[70%]">
+                        Something is wrong! Please try again later.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </h1>
+            </div>
+            <div className="mt-auto mb-auto space-y-2">
+              {data ? (
+                data.sentence_completion.Choices.map((choice, index) => (
+                  <ActionButton
+                    color={processColor(index, selected, data)}
+                    text={choice}
+                    key={index}
+                    onClick={() => handleClick(index)}
+                  />
+                ))
+              ) : (
+                <div></div>
+              )}
+            </div>
+          </div>
+        </div>
+      </>
+    );
   }
 }
 
-export default SentenceCompletion;
+export default SentenceCompletionByKey;
