@@ -41,6 +41,7 @@ function SentenceCompletionByKey() {
   const navigate = useNavigate();
 
   const initialLoad = useRef<boolean>(false);
+  const generatingKey = useRef<boolean>(false);
   const [error, setError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [data, setData] = useState<SentenceCompletionWithMeta | null>(null);
@@ -62,8 +63,10 @@ function SentenceCompletionByKey() {
     [navigate],
   );
 
-  const genKey = useCallback(async (): Promise<string> => {
-    return genCompletionKey();
+  const genKey = useCallback(async (id?: number): Promise<string> => {
+    if (id == undefined) id = 0;
+
+    return genCompletionKey(id);
   }, []);
 
   // load initial key
@@ -72,7 +75,7 @@ function SentenceCompletionByKey() {
 
     const initialKeys = async () => {
       try {
-        const keys = await Promise.all([1, 2, 3, 4, 5].map(() => genKey()));
+        const keys = await Promise.all([1, 2].map((id) => genKey(id)));
         console.log(keys);
         setKeys(keys);
       } catch (error) {
@@ -106,8 +109,10 @@ function SentenceCompletionByKey() {
   }, [genKey, loadKey, key]);
 
   useEffect(() => {
-    console.log("keys: " + keys);
-    if (keys.length < 5) {
+    if (keys.length < 2) {
+      if (generatingKey.current) return;
+      generatingKey.current = true;
+
       const addKey = async () => {
         try {
           const key = await genKey();
@@ -117,6 +122,8 @@ function SentenceCompletionByKey() {
 
           setError(true);
         }
+
+        generatingKey.current = false;
       };
       addKey();
     }
@@ -190,9 +197,9 @@ function SentenceCompletionByKey() {
               Loading...
             </p>
             <div className="flex flex-row space-x-2 mx-auto pt-20">
-              {/*              <div className="h-6 w-6 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>*/}
-              {/*              <div className="h-6 w-6 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>*/}
-              {/*              <div className="h-6 w-6 bg-indigo-600 rounded-full animate-bounce"></div> */}
+              <div className="h-6 w-6 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+              <div className="h-6 w-6 bg-indigo-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+              <div className="h-6 w-6 bg-indigo-600 rounded-full animate-bounce"></div>
             </div>
           </div>
         </div>

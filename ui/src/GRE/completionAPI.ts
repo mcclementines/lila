@@ -35,10 +35,19 @@ export function loadCompletionByKey(
   });
 }
 
-export function genCompletionKey(): Promise<string> {
+export function genCompletionKey(id: number): Promise<string> {
   return new Promise((resolve, reject) => {
     axios
-      .get<Key>(import.meta.env.VITE_REACT_APP_API_URL + "/completion")
+      .get<Key>(import.meta.env.VITE_REACT_APP_API_URL + "/completion", {
+        params: {
+          id: new Date().getTime() + id,
+        },
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      })
       .then((response) => {
         resolve(response.data.key);
       })
