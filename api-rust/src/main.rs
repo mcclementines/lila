@@ -37,7 +37,12 @@ async fn main() -> Result<(), std::io::Error> {
     let cors = ConfigureCors {
         allowed_origin: configuration.application.allowed_origin.clone(),
         allowed_methods: vec_string_to_static_str(&vec![String::from("GET"), String::from("POST")]),
-        allowed_headers: vec_string_to_static_str(&vec![String::from("X-Requested-With")]),
+        allowed_headers: vec_string_to_static_str(&vec![
+            String::from("X-Requested-With"),
+            String::from("Cache-Control"),
+            String::from("Pragma"),
+            String::from("Expires"),
+        ]),
     };
 
     let client: Result<Client, mongodb::error::Error> =
