@@ -55,6 +55,7 @@ pub async fn completion(
         key: key.clone(),
         views: 0,
         created_date: Utc::now(),
+        stats: Statistics::new(),
         sentence_completion: generated_completion,
     };
     let record_completion = collection.insert_one(completion_record.clone(), None).await;
@@ -170,15 +171,36 @@ pub struct SentenceCompletion {
     choices: Vec<String>,
 }
 
-impl Responder for SentenceCompletion {
-    type Body = BoxBody;
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct Statistics {
+    correct: u32,
+    incorrect: u32,
+    avg_completion_time: f64,
+}
 
-    fn respond_to(self, _req: &actix_web::HttpRequest) -> HttpResponse<Self::Body> {
-        let body = serde_json::to_string(&self).unwrap();
+impl Statistics {
+    pub fn new() -> Statistics {
+        Statistics {
+            correct: 0,
+            incorrect: 0,
+            avg_completion_time: 0_f64,
+        }
+    }
 
-        HttpResponse::Ok()
-            .content_type(ContentType::json())
-            .body(body)
+    pub fn add_correct(&mut self) {
+        self.correct += 1;
+    }
+
+    pub fn add_incorrect(&mut self) {
+        self.incorrect += 1;
+    }
+
+    pub fn add_completion_time(&mut self, completion_time: f64) {
+        if self.correct + self.incorrect <= 0 {
+            return
+        }
+
+        self.avg_completion_time = (self.avg_completion_time + completion_time) / (self.correct + self.incorrect) as f64;
     }
 }
 
@@ -187,6 +209,7 @@ pub struct SentenceCompletionWithMeta {
     key: String,
     views: u32,
     created_date: DateTime<Utc>,
+    stats: Statistics,
     sentence_completion: SentenceCompletion,
 }
 
