@@ -164,9 +164,14 @@ function SentenceCompletionByKey() {
   }, [selected, genKey, loadKey, keys]);
 
   function handleClick(id: number) {
-    let isCorrect = data?.sentence_completion.Choices[id] === data?.sentence_completion.Word;
-    
-    recordCompletionResult(currentKey, isCorrect, new Date().getTime() - startTime);
+    const isCorrect =
+      data?.sentence_completion.Choices[id] === data?.sentence_completion.Word;
+
+    recordCompletionResult(
+      currentKey,
+      isCorrect,
+      new Date().getTime() - startTime,
+    );
 
     setSelected({ id: id, isCorrect: isCorrect });
   }

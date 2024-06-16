@@ -58,17 +58,21 @@ export function genCompletionKey(id: number): Promise<string> {
   });
 }
 
-export function recordCompletionResult(key: string, correct: boolean, timeToComplete: number) {
+export function recordCompletionResult(
+  key: string,
+  correct: boolean,
+  timeToComplete: number,
+) {
   const params = new URLSearchParams();
   params.append("key", key);
   params.append("is_correct", String(correct));
   params.append("completion_time", timeToComplete.toString());
-  
+
   return new Promise((resolve, reject) => {
     axios
       .post(
         import.meta.env.VITE_REACT_APP_API_URL + "/completion/stats/update",
-        params
+        params,
       )
       .then((response) => {
         resolve(response.data);
