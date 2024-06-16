@@ -7,7 +7,10 @@ use actix_web::{
     HttpResponse, Responder,
 };
 use chrono::{DateTime, Utc};
-use mongodb::{bson::doc, Client, Collection};
+use mongodb::{
+    bson::{doc, to_bson},
+    Client, Collection,
+};
 use openai_api_rust::{
     chat::{ChatApi, ChatBody},
     Auth, Message, OpenAI, Role,
@@ -55,6 +58,7 @@ pub async fn completion(
         key: key.clone(),
         views: 0,
         created_date: Utc::now(),
+        stats: Statistics::new(),
         sentence_completion: generated_completion,
     };
     let record_completion = collection.insert_one(completion_record.clone(), None).await;
@@ -69,7 +73,7 @@ pub async fn completion(
     }
 }
 
-#[tracing::instrument(skip_all)]
+#[tracing::instrument(skip(mongodb_client))]
 pub async fn completion_by_key(
     mongodb_client: Data<Client>,
     key: web::Path<String>,
@@ -112,6 +116,55 @@ pub async fn completion_by_key(
     completion
 }
 
+pub async fn completion_stats_update(
+    mongodb_client: Data<Client>,
+    form: web::Form<StatsForm>,
+) -> impl Responder {
+    let collection: Collection<SentenceCompletionWithMeta> =
+        mongodb_client.database("gre").collection("completions");
+    let filter = doc! { "key": &form.key };
+
+    let mut completion: SentenceCompletionWithMeta =
+        match collection.find_one(filter.clone(), None).await {
+            Ok(doc) => match doc {
+                Some(completion) => completion,
+                None => panic!("oh no!"),
+            },
+            Err(_) => {
+                tracing::error!("Could not find Completion by key ({})!", &form.key);
+                panic!(
+                "{{\"msg\": \"Could not find specified completion.\",\"received_key\": \"{}\"}}",
+                &form.key
+            );
+            }
+        };
+
+    if form.is_correct {
+        completion.stats.add_correct();
+    } else {
+        completion.stats.add_incorrect();
+    }
+    completion.stats.add_completion_time(form.completion_time);
+
+    let new_stats = to_bson(&completion.stats);
+    match new_stats {
+        Ok(stats) => {
+            let update_stats = doc! { "$set": { "stats": stats } };
+            match collection.update_one(filter, update_stats, None).await {
+                Ok(_) => {
+                    tracing::info!("Updated stats for completion {} successfully!", &form.key);
+                    HttpResponse::Ok()
+                }
+                Err(_) => {
+                    tracing::warn!("Could not update stats for completion {}", &form.key);
+                    HttpResponse::InternalServerError()
+                }
+            }
+        }
+        Err(_) => HttpResponse::InternalServerError(),
+    }
+}
+
 pub async fn generate_completion(word: String) -> Result<SentenceCompletion, std::io::Error> {
     let auth = Auth::from_env().expect("Could not load OpenAI key");
     let openai = OpenAI::new(auth, "https://api.openai.com/v1/");
@@ -145,6 +198,29 @@ pub async fn generate_completion(word: String) -> Result<SentenceCompletion, std
     Ok(serde_json::from_str(content).unwrap())
 }
 
+pub async fn get_completion_by_key(
+    mongodb_client: Data<Client>,
+    key: String,
+) -> SentenceCompletionWithMeta {
+    let collection: Collection<SentenceCompletionWithMeta> =
+        mongodb_client.database("gre").collection("completions");
+    let filter = doc! { "key": key.clone() };
+
+    match collection.find_one(filter.clone(), None).await {
+        Ok(doc) => match doc {
+            Some(completion) => completion,
+            None => panic!("oh no!"),
+        },
+        Err(_) => {
+            tracing::error!("Could not find Completion by key ({})!", &key);
+            panic!(
+                "{{\"msg\": \"Could not find specified completion.\",\"received_key\": \"{}\"}}",
+                key
+            );
+        }
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct Key {
     key: String,
@@ -170,16 +246,51 @@ pub struct SentenceCompletion {
     choices: Vec<String>,
 }
 
-impl Responder for SentenceCompletion {
-    type Body = BoxBody;
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct Statistics {
+    correct: u32,
+    incorrect: u32,
+    avg_completion_time: u64,
+}
 
-    fn respond_to(self, _req: &actix_web::HttpRequest) -> HttpResponse<Self::Body> {
-        let body = serde_json::to_string(&self).unwrap();
-
-        HttpResponse::Ok()
-            .content_type(ContentType::json())
-            .body(body)
+impl Default for Statistics {
+    fn default() -> Self {
+        Self::new()
     }
+}
+
+impl Statistics {
+    pub fn new() -> Statistics {
+        Statistics {
+            correct: 0,
+            incorrect: 0,
+            avg_completion_time: 0,
+        }
+    }
+
+    pub fn add_correct(&mut self) {
+        self.correct += 1;
+    }
+
+    pub fn add_incorrect(&mut self) {
+        self.incorrect += 1;
+    }
+
+    pub fn add_completion_time(&mut self, completion_time: u64) {
+        if self.correct + self.incorrect == 0 {
+            return;
+        }
+
+        self.avg_completion_time =
+            (self.avg_completion_time + completion_time) / (self.correct + self.incorrect) as u64;
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct StatsForm {
+    key: String,
+    is_correct: bool,
+    completion_time: u64,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
@@ -187,6 +298,7 @@ pub struct SentenceCompletionWithMeta {
     key: String,
     views: u32,
     created_date: DateTime<Utc>,
+    stats: Statistics,
     sentence_completion: SentenceCompletion,
 }
 

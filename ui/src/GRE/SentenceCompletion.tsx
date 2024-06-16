@@ -6,11 +6,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   SentenceCompletionWithMeta,
   loadCompletionByKey,
+  recordCompletionResult,
 } from "./completionAPI";
 import { genCompletionKey } from "./completionAPI";
 
 interface Selected {
-  key: number;
+  id: number;
   isCorrect: boolean | null;
 }
 
@@ -19,13 +20,13 @@ function processColor(
   selected: Selected,
   data: SentenceCompletionWithMeta,
 ): string {
-  if (selected.key != -1 && selected.key === key) {
+  if (selected.id != -1 && selected.id === key) {
     if (selected.isCorrect) {
       return "green";
     } else {
       return "red";
     }
-  } else if (selected.key != -1) {
+  } else if (selected.id != -1) {
     if (
       data?.sentence_completion.Choices[key] == data?.sentence_completion.Word
     )
@@ -47,17 +48,21 @@ function SentenceCompletionByKey() {
   const [data, setData] = useState<SentenceCompletionWithMeta | null>(null);
   const [keys, setKeys] = useState<string[]>([]);
   const [selected, setSelected] = useState<Selected>({
-    key: -1,
+    id: -1,
     isCorrect: null,
   });
+  const [startTime, setStartTime] = useState<number>(0);
+  const [currentKey, setCurrentKey] = useState<string>("");
 
   const loadKey = useCallback(
     async (key: string) => {
       const completion = await loadCompletionByKey(key);
 
       setData(completion);
-      setSelected({ key: -1, isCorrect: null });
+      setSelected({ id: -1, isCorrect: null });
       setIsLoaded(true);
+      setStartTime(new Date().getTime());
+      setCurrentKey(key);
       navigate(`/gre/completion/${completion.key}`, { replace: true });
     },
     [navigate],
@@ -131,9 +136,9 @@ function SentenceCompletionByKey() {
 
   // load next key
   useEffect(() => {
-    if (selected.key != -1) {
+    if (selected.id != -1) {
       const reload = setTimeout(() => {
-        const reloadKey = async () => {
+        const loadNextKey = async () => {
           try {
             let key: string;
 
@@ -151,23 +156,24 @@ function SentenceCompletionByKey() {
           }
         };
 
-        reloadKey();
+        loadNextKey();
       }, 1500);
 
       return () => clearTimeout(reload);
     }
   }, [selected, genKey, loadKey, keys]);
 
-  function handleClick(key: number) {
-    let isCorrect = false;
+  function handleClick(id: number) {
+    const isCorrect =
+      data?.sentence_completion.Choices[id] === data?.sentence_completion.Word;
 
-    if (
-      data?.sentence_completion.Choices[key] === data?.sentence_completion.Word
-    ) {
-      isCorrect = true;
-    }
+    recordCompletionResult(
+      currentKey,
+      isCorrect,
+      new Date().getTime() - startTime,
+    );
 
-    setSelected({ key: key, isCorrect: isCorrect });
+    setSelected({ id: id, isCorrect: isCorrect });
   }
 
   if (error) {
